@@ -19,21 +19,15 @@ public static class MathUtils
     }
     
     /// <summary>
-    /// Returns the distance from P to the closest point on segment AB.
-    /// </summary>
-    public static float DistanceToSegment(Vector3 a, Vector3 b, Vector3 p)
-    {
-        Vector3 closest = ClosestPointOnLine(a, b, p);
-        return Vector3.Distance(p, closest);
-    }
-    
-    /// <summary>
     /// Returns the closest point on a bounded rectangular plane to point P.
     /// The plane is defined by its center, two perpendicular unit axis vectors
     /// (right and up), and half-extents along each axis.
     /// </summary>
-    public static Vector3 ClosestPointOnPlaneSegment(Transform objectTransform, float half, Vector3 p)
+    public static Vector3 ClosestPointOnPlaneSegment(Transform objectTransform, float halfRadius, float halfWidth, Vector3 p)
     {
+        halfRadius -= 0.35f;
+        halfWidth -= 0.35f;
+        
         Vector3 cp = p - objectTransform.position;
 
         // right/up are assumed unit length, so the dot product gives the
@@ -43,15 +37,37 @@ public static class MathUtils
 
         // Clamp to +/- half-extent since the origin is the rectangle's center,
         // not a corner. This is the centered equivalent of the 0-1 clamp.
-        u = Mathf.Clamp(u, -half, half);
-        v = Mathf.Clamp(v, -half, half);
+        u = Mathf.Clamp(u, -halfRadius, halfRadius);
+        v = Mathf.Clamp(v, -halfWidth, halfWidth);
 
         return objectTransform.position + u * objectTransform.right + v * objectTransform.forward;
     }
 
-    public static float DistanceToPlaneSegment(Transform objectTransform, float half, Vector3 p)
-    {
-        Vector3 closest = ClosestPointOnPlaneSegment(objectTransform, half, p);
-        return Vector3.Distance(p, closest);
-    }
+    #region Distance
+
+        /// <summary>
+        /// Returns the distance from P to the closest point on segment AB.
+        /// </summary>
+        public static float DistanceToSegment(Vector3 a, Vector3 b, Vector3 p)
+        {
+            Vector3 closest = ClosestPointOnLine(a, b, p);
+            return Vector3.Distance(p, closest);
+        }
+        
+        /// <summary>
+        /// The distance from P to the closest point on a plane  
+        /// </summary>
+        public static float DistanceToPlaneSegment(Transform objectTransform, float halfRadius, float halfWidth, Vector3 p)
+        {
+            Vector3 closest = ClosestPointOnPlaneSegment(objectTransform, halfRadius, halfWidth, p);
+            return Vector3.Distance(p, closest);
+        }
+        
+        public static float DistanceToSurface(Vector3 pos, Vector3 planet, float radius)
+        {
+            return Vector3.Distance(pos, planet) - radius;
+        }
+
+    #endregion
+    
 }

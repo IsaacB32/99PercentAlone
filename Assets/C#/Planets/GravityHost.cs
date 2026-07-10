@@ -7,6 +7,9 @@ using UnityEditor;
 
 public class GravityHost : MonoBehaviour
 {
+    public const float GRAVITATIONAL_CONST = 0.01f;
+    public const float GRAVITATIONAL_CONST_PLANE = 0.01f;
+    
     [SerializeField] private GravityType _gravityType;
     [Space]
     [SerializeField] private float _radius;
@@ -26,15 +29,16 @@ public class GravityHost : MonoBehaviour
         CalculateCylinderGravity();
     }
 
-    public Vector3 VectorFromCenter(Vector3 objectPosition)
+    public Vector3 VectorToCenter(Vector3 objectPosition)
     {
         switch (_gravityType)
         {
             case GravityType.Cylinder:
                 Vector3 finalPoint = MathUtils.ClosestPointOnLine(_linePointQ, _linePointR, objectPosition);
                 return finalPoint - objectPosition;
+            case GravityType.Surface:
             case GravityType.Plane:
-                return MathUtils.ClosestPointOnPlaneSegment(transform, _radius / 2, objectPosition) - objectPosition;
+                return MathUtils.ClosestPointOnPlaneSegment(transform, _radius / 2f, _width / 2f, objectPosition) - objectPosition;
             case GravityType.Sphere:
                 return transform.position - objectPosition;
             default:
@@ -42,17 +46,29 @@ public class GravityHost : MonoBehaviour
         }
     }
 
+    public float DistanceToSurface(Vector3 objectPosition)
+    {
+        return _gravityType switch
+        {
+            GravityType.Sphere or GravityType.Cylinder => MathUtils.DistanceToSurface(objectPosition, transform.position, _radius),
+            GravityType.Surface or GravityType.Plane => MathUtils.DistanceToSurface(objectPosition, transform.position, 1f),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+    }
+
     private void CalculateCylinderGravity()
     {
         Vector3 world = transform.rotation * Vector3.up;
-        Vector3 offset = world * _width;
+        Vector3 offset = world * (_width - _radius / 2f);
         _linePointQ = transform.position - offset;
         _linePointR = transform.position + offset;
     }
 
     private void OnValidate() 
     {
-        Mass = _surfaceGravity * _radius * _radius / PlayerMovementController.GRAVITATIONAL_CONST;
+        if (_gravityType == GravityType.Plane) Mass = _surfaceGravity * _radius * _width / GRAVITATIONAL_CONST_PLANE;
+        else Mass = _surfaceGravity * _radius * _radius / GRAVITATIONAL_CONST;
+        
         ScalePlanet();
         return;
         
@@ -61,7 +77,9 @@ public class GravityHost : MonoBehaviour
             transform.localScale = _gravityType switch
             {
                 GravityType.Sphere => new Vector3(_radius, _radius, _radius),
-                GravityType.Cylinder or GravityType.Plane => new Vector3(_radius, _width, _radius),
+                GravityType.Cylinder => new Vector3(_radius, _width, _radius),
+                GravityType.Plane => new Vector3(_radius, transform.localScale.y, _width),
+                GravityType.Surface => new Vector3(_radius, 1f, _width),
                 _ => throw new ArgumentOutOfRangeException()
             };
         }
@@ -69,7 +87,7 @@ public class GravityHost : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        Vector3 left, right;
+        Vector3 left;
         if (!_testObject) return;
         switch (_gravityType)
         {
@@ -78,20 +96,21 @@ public class GravityHost : MonoBehaviour
                 Gizmos.DrawLine(transform.position, _testObject.position);
                 break;
             case GravityType.Cylinder:
-                // Gizmos.color = Color.red;
+                Gizmos.color = Color.red;
                 Vector3 world = transform.rotation * Vector3.up;
-                Vector3 offset = world * _width;
+                Vector3 offset = world * (_width - _radius / 2f);
                 left = transform.position - offset;
-                right = transform.position + offset;
-                // Gizmos.DrawLine(left, right);
+                Vector3 right = transform.position + offset;
+                Gizmos.DrawLine(left, right);
             
                 Gizmos.color = Color.blue;
                 Vector3 closestPoint = MathUtils.ClosestPointOnLine(left, right, _testObject.position);
                 Gizmos.DrawLine(_testObject.transform.position, closestPoint);
                 break;
+            case GravityType.Surface:
             case GravityType.Plane:
                 Gizmos.color = Color.blue;
-                left = MathUtils.ClosestPointOnPlaneSegment(transform, _radius / 2, _testObject.position);
+                left = MathUtils.ClosestPointOnPlaneSegment(transform, _radius / 2f, _width / 2f, _testObject.position);
                 Gizmos.DrawLine(left, _testObject.position);
                 break;
             default:
@@ -107,7 +126,8 @@ public class GravityHost : MonoBehaviour
     {
         Sphere, 
         Cylinder,
-        Plane
+        Plane,
+        Surface
     }
 }
 

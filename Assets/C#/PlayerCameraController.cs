@@ -11,8 +11,9 @@ public class PlayerCameraController : MonoBehaviour
 
     [Header("Smoothing")]
     [Tooltip("Lower = more responsive. 0.02-0.04 feels snappy, 0.1+ feels floaty/laggy.")]
-    [SerializeField] private float _smoothTime = 0.02f;
+    [SerializeField] private float _gravitySmoothTime = 0.02f;
     [SerializeField] private float _spaceSmoothTime = 0.012f;
+    private float _cameraSmoothingTime;
 
     [Header("Zoom/Aim Settings")] 
     [SerializeField] private float _normalFOV = 60f;
@@ -49,9 +50,9 @@ public class PlayerCameraController : MonoBehaviour
     private Transform _parentObject;
     
     //===== Mouse Look =====
-    private float _xRotation, _yRotation;
-    private float _smoothXRot, _smoothYRot;
-    private float _smoothXRef, _smoothYRef; //these are useless values (for SmoothDamp)
+    private Vector2 _cameraRotation;
+    private Vector2 _cameraSmoothing;
+    private Vector2 _smoothingRef; //these are useless values (for SmoothDamp)
 
     //===== Zoom variables =====
     private float _targetFOV;
@@ -67,7 +68,7 @@ public class PlayerCameraController : MonoBehaviour
     private bool _wasGrounded = true;
     
     //===== Movement States =====
-    private Action<Vector2> CurrentMovement;
+    // private Action<Vector2> CurrentMovement;
 
     private void Awake()
     {
@@ -75,7 +76,7 @@ public class PlayerCameraController : MonoBehaviour
         _playerBody = transform.parent;
         _parentObject = _playerBody.parent;
 
-        CurrentMovement = WeightlessMovement;
+        // CurrentMovement = GravityMovement;
     }
 
     private void Start()
@@ -110,18 +111,29 @@ public class PlayerCameraController : MonoBehaviour
     
     private void OnLook(Vector2 lookVector)
     {
-        _xRotation += lookVector.x * mouseSensitivity;
-        _yRotation -= lookVector.y * mouseSensitivity;
-        CurrentMovement(lookVector);
+        _cameraRotation.x += lookVector.x * mouseSensitivity;
+        _cameraRotation.y -= lookVector.y * mouseSensitivity;
+
+        CameraMovement(lookVector);
+        // CurrentMovement(lookVector);
     }
+    
     
     private void OnSwitchInputState(PlayerInputState newState)
     {
-        CurrentMovement = newState switch
+        // CurrentMovement = newState switch
+        // {
+        //     PlayerInputState.Gravity => GravityMovement,
+        //     PlayerInputState.Weightless => WeightlessMovement,
+        //     PlayerInputState.Menu => MenuMovement,
+        //     _ => throw new ArgumentOutOfRangeException(nameof(newState), newState, null)
+        // };
+
+        _cameraSmoothingTime = newState switch
         {
-            PlayerInputState.Gravity => GravityMovement,
-            PlayerInputState.Weightless => WeightlessMovement,
-            PlayerInputState.Menu => MenuMovement,
+            PlayerInputState.Gravity => _gravitySmoothTime,
+            PlayerInputState.Weightless => _spaceSmoothTime,
+            PlayerInputState.Menu => throw new NotImplementedException(),
             _ => throw new ArgumentOutOfRangeException(nameof(newState), newState, null)
         };
     }
@@ -129,34 +141,45 @@ public class PlayerCameraController : MonoBehaviour
     #endregion
     
     #region Movement States
+
+    private void CameraMovement(Vector2 lookVector)
+    {
+        _cameraRotation.y = Mathf.Clamp(_cameraRotation.y - lookVector.y * mouseSensitivity, _minVerticalAngle, _maxVerticalAngle);
+        _cameraSmoothing.y = Mathf.SmoothDampAngle(_cameraSmoothing.y, _cameraRotation.y, ref _smoothingRef.y, _cameraSmoothingTime);
+        
+        float smoothXOld = _cameraSmoothing.x;
+        _cameraSmoothing.x = Mathf.SmoothDampAngle(_cameraSmoothing.x, _cameraRotation.x, ref _smoothingRef.x, _cameraSmoothingTime);
+        
+        transform.localEulerAngles = Vector3.right * _cameraSmoothing.y;
+        _playerBody.Rotate(Vector3.up * Mathf.DeltaAngle(smoothXOld, _cameraSmoothing.x), Space.Self);
+    } 
     
-    private void GravityMovement(Vector2 lookVector)
-    {
-        _yRotation = Mathf.Clamp(_yRotation - lookVector.y * mouseSensitivity, _minVerticalAngle, _maxVerticalAngle);
-        
-        _smoothYRot = Mathf.SmoothDampAngle(_smoothYRot, _yRotation, ref _smoothYRef, _smoothTime);
-        float smoothXOld = _smoothXRot;
-        _smoothXRot = Mathf.SmoothDampAngle(_smoothXRot, _xRotation, ref _smoothXRef, _smoothTime);
-        
-        transform.localEulerAngles = Vector3.right * _smoothYRot;
-        _playerBody.Rotate(Vector3.up * Mathf.DeltaAngle(smoothXOld, _smoothXRot), Space.Self);
-    }
-
-    private void WeightlessMovement(Vector2 lookVector)
-    {
-        float smoothYOld = _smoothYRot;
-        _smoothYRot = Mathf.SmoothDampAngle(_smoothYRot, _yRotation, ref _smoothYRef, _spaceSmoothTime);
-        float smoothXOld = _smoothXRot;
-        _smoothXRot = Mathf.SmoothDampAngle(_smoothXRot, _xRotation, ref _smoothXRef, _spaceSmoothTime);
-        
-        Vector3 rotationVector = new Vector3(Mathf.DeltaAngle (smoothYOld, _smoothYRot), Mathf.DeltaAngle (smoothXOld, _smoothXRot));
-        _parentObject.Rotate(rotationVector, Space.Self);
-    }
-
-    private void MenuMovement(Vector2 lookVector)
-    {
-        throw new NotImplementedException();
-    }
+    // private void GravityMovement(Vector2 lookVector)
+    // {
+    //     _yRotation = Mathf.Clamp(_yRotation - lookVector.y * mouseSensitivity, _minVerticalAngle, _maxVerticalAngle);
+    //     _smoothYRot = Mathf.SmoothDampAngle(_smoothYRot, _yRotation, ref _smoothYRef, _smoothTime);
+    //     
+    //     float smoothXOld = _smoothXRot;
+    //     _smoothXRot = Mathf.SmoothDampAngle(_smoothXRot, _xRotation, ref _smoothXRef, _smoothTime);
+    //     
+    //     transform.localEulerAngles = Vector3.right * _smoothYRot;
+    //     _playerBody.Rotate(Vector3.up * Mathf.DeltaAngle(smoothXOld, _smoothXRot), Space.Self);
+    // }
+    //
+    // private void WeightlessMovement(Vector2 lookVector)
+    // {
+    //     float smoothYOld = _smoothYRot;
+    //     _smoothYRot = Mathf.SmoothDampAngle(_smoothYRot, _yRotation, ref _smoothYRef, _spaceSmoothTime);
+    //     
+    //     float smoothXOld = _smoothXRot;
+    //     _smoothXRot = Mathf.SmoothDampAngle(_smoothXRot, _xRotation, ref _smoothXRef, _spaceSmoothTime);
+    //     
+    //     // Vector3 rotationVector = new Vector3(Mathf.DeltaAngle (smoothYOld, _smoothYRot), Mathf.DeltaAngle (smoothXOld, _smoothXRot));
+    //     // _parentObject.Rotate(rotationVector, Space.Self);
+    //     
+    //     transform.localEulerAngles = Vector3.right * _smoothYRot;
+    //     _playerBody.Rotate(Vector3.up * Mathf.DeltaAngle(smoothXOld, _smoothXRot), Space.Self);
+    // }
     
     #endregion
     

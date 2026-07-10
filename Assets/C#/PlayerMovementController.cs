@@ -1,11 +1,9 @@
 using System;
-using UnityEditor;
 using UnityEngine;
 
 public class PlayerMovementController : MonoBehaviour
 {
     //===== Gravity =====
-    public const float GRAVITATIONAL_CONST = 0.01f;
     private GravityHost[] _bodies;
 
     [SerializeField] private Transform _playerBody;
@@ -18,9 +16,12 @@ public class PlayerMovementController : MonoBehaviour
     [SerializeField] private float _airSmoothTime = 0.5f;
     
     [Header("Weightless Movement Settings")]
-    [SerializeField] private float _maxThrust = 2f;
     [SerializeField] private float _thrustAcceleration = 0.2f;
-    [SerializeField] private float _cameraRotateSpeedToGravity = 1f;
+    [SerializeField] private float _maxThrust = 2f;
+    [SerializeField] private float _weightlessRotationSpeed = 1f;    
+    [SerializeField] private float _weightlessSmoothingAmount = 0.05f;
+    [Tooltip("the max speed the camera slerps at when changing movement states")] 
+    [SerializeField] private float _gravitySmoothingMax = 3f;
     
     [Header("Jump Settings")]
     [SerializeField] private float _jumpForce = 20f; 
@@ -32,13 +33,18 @@ public class PlayerMovementController : MonoBehaviour
     //===== References =====
     private Rigidbody _rb;
     
-    //===== Variables =====
-    private bool _isGrounded;
+    //===== Gravity Movement Variables =====
     private Vector3 _movementInput;
     private Vector3 _smoothRef;
     
+    //===== Weightless Movement Variables =====
+    private Vector2 _weightlessRotationInput;
+    private Vector2 _weightlessSmoothRef;
+
+    
     //===== Movement States =====
     private Action CurrentMovement;
+    private bool _isThrusting = false;
     
     private void Awake()
     {
@@ -46,20 +52,22 @@ public class PlayerMovementController : MonoBehaviour
         _rb = GetComponent<Rigidbody>();
         _playerCamera = _playerBody.GetComponentInChildren<Camera>().transform;
 
-        CurrentMovement = WeightlessMovement;
+        CurrentMovement = GravityMovement;
     }
 
     #region Subscribe
 
         private void OnEnable()
         {
-            InputCatcher.OnJump += OnJump;
+            InputCatcher.OnJumpPressed += OnJumpPressed;
+            InputCatcher.OnJumpReleased += OnJumpReleased;
             InputCatcher.OnSwitchInputState += OnSwitchInputState;
         }
     
         private void OnDisable()
         {
-            InputCatcher.OnJump -= OnJump;
+            InputCatcher.OnJumpPressed -= OnJumpPressed;
+            InputCatcher.OnJumpReleased -= OnJumpReleased;
             InputCatcher.OnSwitchInputState -= OnSwitchInputState;
         }
 
@@ -67,11 +75,16 @@ public class PlayerMovementController : MonoBehaviour
 
     #region Event Methods
 
-    private void OnJump()
+    private void OnJumpPressed()
     {
+        _isThrusting = true;
         if (!InputCatcher.IsGrounded) return;
         _rb.AddForce(transform.up * _jumpForce, ForceMode.VelocityChange);
-        Debug.Log("jumped");
+    }
+
+    private void OnJumpReleased()
+    {
+        _isThrusting = false;
     }
 
     private void OnSwitchInputState(PlayerInputState newState)
@@ -96,12 +109,28 @@ public class PlayerMovementController : MonoBehaviour
         float smoothTime = (InputCatcher.IsGrounded) ? _groundSmoothTime : _airSmoothTime;
         _movementInput = Vector3.SmoothDamp(_movementInput, targetVelocity, ref _smoothRef, smoothTime);
     }
-
+    
     private void WeightlessMovement()
     {
-        Vector3 targetVelocity = transform.TransformDirection(InputCatcher.MovementVector.normalized);
-        _movementInput += targetVelocity * _thrustAcceleration * Time.deltaTime;
-        _movementInput = Vector3.ClampMagnitude(_movementInput, _maxThrust);
+        Vector3 inputDirection = InputCatcher.MovementVector.normalized;
+        
+        _weightlessRotationInput.x = Mathf.SmoothDamp(_weightlessRotationInput.x, inputDirection.x, ref _weightlessSmoothRef.x, _weightlessSmoothingAmount);
+        _weightlessRotationInput.y = Mathf.SmoothDamp(_weightlessRotationInput.y, inputDirection.z, ref _weightlessSmoothRef.y, _weightlessSmoothingAmount);
+        _weightlessRotationInput *= _weightlessRotationSpeed;
+        
+        Vector3 pitchAxis = _playerCamera.right;
+        Vector3 rollAxis  = -_playerCamera.forward;
+
+        transform.Rotate(pitchAxis, _weightlessRotationInput.y, Space.World);
+        transform.Rotate(rollAxis, _weightlessRotationInput.x, Space.World);
+        
+        //===== Thrusters
+
+        if (_isThrusting)
+        {
+            _movementInput += _playerCamera.forward * _thrustAcceleration * Time.deltaTime;
+            _movementInput = Vector3.ClampMagnitude(_movementInput, _maxThrust);
+        }
     }
 
     private void MenuMovement()
@@ -117,20 +146,22 @@ public class PlayerMovementController : MonoBehaviour
         CurrentMovement();
     }
 
-    private void FixedUpdate() 
+    private void FixedUpdate()
     {
+        GravityHost closestBody = null;
         Vector3 strongestGravitationalPull = Vector3.zero;
         foreach (GravityHost body in _bodies)
         {
-            Vector3 vectorToCenter = body.VectorFromCenter(_rb.position);
+            Vector3 vectorToCenter = body.VectorToCenter(_rb.position);
             float sqrDst = vectorToCenter.sqrMagnitude;
             Vector3 forceDir = vectorToCenter.normalized;
-            Vector3 acceleration = forceDir * GRAVITATIONAL_CONST * body.Mass / sqrDst;
+            Vector3 acceleration = forceDir * GravityHost.GRAVITATIONAL_CONST * body.Mass / sqrDst;
             _rb.AddForce(acceleration, ForceMode.Acceleration);
 
             if (acceleration.sqrMagnitude > strongestGravitationalPull.sqrMagnitude)
             {
                 strongestGravitationalPull = acceleration;
+                closestBody = body;
             }
         }
         
@@ -145,20 +176,11 @@ public class PlayerMovementController : MonoBehaviour
 
             Quaternion deltaRotation = Quaternion.FromToRotation(transform.up, gravityUp);
             Quaternion targetRotation = deltaRotation * _rb.rotation;
-
-            if (InputCatcher.IsGrounded) _rb.rotation = targetRotation;
-            else
-            {
-                Quaternion easedRot = Quaternion.Slerp(_rb.rotation, targetRotation, _cameraRotateSpeedToGravity * Time.deltaTime);
-                _rb.rotation = easedRot;
-            }
-           
-            //tODO
-            //_cameraRotateSpeedToGravity needs to be based on math
-            //distance to surface, speed of approaching player, maybe mass/gravity too
-
+            
+            float cameraSmoothSpeed = _gravitySmoothingMax / (1f + closestBody.DistanceToSurface(_rb.position) * 0.1f);
+            Quaternion easedRot = Quaternion.Slerp(_rb.rotation, targetRotation, cameraSmoothSpeed * Time.fixedDeltaTime);
+            _rb.rotation = easedRot;
         }
-
         
         _rb.MovePosition(_rb.position + _movementInput * Time.fixedDeltaTime);
     }

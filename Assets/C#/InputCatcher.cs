@@ -26,7 +26,7 @@ public class InputCatcher : MonoBehaviour
         {
             if (Instance._currentPlayerInputState == value) return;
             
-            Debug.Log($"Entering Input State - {value}");
+            // Debug.Log($"Entering Input State - {value}");
             OnSwitchInputState?.Invoke(value);
             Instance._currentPlayerInputState = value;
         }
@@ -53,7 +53,8 @@ public class InputCatcher : MonoBehaviour
     
     public static event Action<Vector3> OnMove;
     public static event Action<Vector2> OnLook;
-    public static event Action OnJump;
+    public static event Action OnJumpPressed;
+    public static event Action OnJumpReleased;
     
     private bool _isGrounded;
     public static bool IsGrounded => Instance._isGrounded; 
@@ -82,8 +83,13 @@ public class InputCatcher : MonoBehaviour
     {
         if (context.performed)
         {
-            OnJump?.Invoke();
+            OnJumpPressed?.Invoke();
             _isGrounded = false;
+        }
+
+        if (context.canceled)
+        {
+            OnJumpReleased?.Invoke();
         }
     }
 
