@@ -1,11 +1,8 @@
 using System;
 using UnityEngine;
 
-public class PlayerMovementController : MonoBehaviour
+public class PlayerMovementController : GravityBody
 {
-    //===== Gravity =====
-    private GravityHost[] _bodies;
-
     [SerializeField] private Transform _playerBody;
     private Transform _playerCamera;
     
@@ -20,19 +17,11 @@ public class PlayerMovementController : MonoBehaviour
     [SerializeField] private float _maxThrust = 2f;
     [SerializeField] private float _weightlessRotationSpeed = 1f;    
     [SerializeField] private float _weightlessSmoothingAmount = 0.05f;
-    [Tooltip("the max speed the camera slerps at when changing movement states")] 
-    [SerializeField] private float _gravitySmoothingMax = 3f;
     
     [Header("Jump Settings")]
     [SerializeField] private float _jumpForce = 20f; 
     [SerializeField] private float _stickToGroundForce = 8f;
-    
-    [Header("Gravity Settings")]
-    [SerializeField] private float _weakestGravityStrength = 1f;
-    
-    //===== References =====
-    private Rigidbody _rb;
-    
+
     //===== Gravity Movement Variables =====
     private Vector3 _movementInput;
     private Vector3 _smoothRef;
@@ -40,18 +29,15 @@ public class PlayerMovementController : MonoBehaviour
     //===== Weightless Movement Variables =====
     private Vector2 _weightlessRotationInput;
     private Vector2 _weightlessSmoothRef;
-
     
     //===== Movement States =====
     private Action CurrentMovement;
     private bool _isThrusting = false;
     
-    private void Awake()
+    protected new void Awake()
     {
-        _bodies = FindObjectsByType<GravityHost>(); //ToDO
-        _rb = GetComponent<Rigidbody>();
+        base.Awake();
         _playerCamera = _playerBody.GetComponentInChildren<Camera>().transform;
-
         CurrentMovement = GravityMovement;
     }
 
@@ -79,7 +65,7 @@ public class PlayerMovementController : MonoBehaviour
     {
         _isThrusting = true;
         if (!InputCatcher.IsGrounded) return;
-        _rb.AddForce(transform.up * _jumpForce, ForceMode.VelocityChange);
+        rb.AddForce(transform.up * _jumpForce, ForceMode.VelocityChange);
     }
 
     private void OnJumpReleased()
@@ -139,31 +125,16 @@ public class PlayerMovementController : MonoBehaviour
     }
 
     #endregion
-
-
+    
     private void Update()
     {
         CurrentMovement();
     }
-
-    private void FixedUpdate()
+    
+    public override void ApplyGravity()
     {
-        GravityHost closestBody = null;
-        Vector3 strongestGravitationalPull = Vector3.zero;
-        foreach (GravityHost body in _bodies)
-        {
-            Vector3 vectorToCenter = body.VectorToCenter(_rb.position);
-            float sqrDst = vectorToCenter.sqrMagnitude;
-            Vector3 forceDir = vectorToCenter.normalized;
-            Vector3 acceleration = forceDir * GravityHost.GRAVITATIONAL_CONST * body.Mass / sqrDst;
-            _rb.AddForce(acceleration, ForceMode.Acceleration);
-
-            if (acceleration.sqrMagnitude > strongestGravitationalPull.sqrMagnitude)
-            {
-                strongestGravitationalPull = acceleration;
-                closestBody = body;
-            }
-        }
+        SpaceUtils.RelativeGravitySource closestSource = SpaceUtils.GetClosestSourceToObject(this);
+        Vector3 strongestGravitationalPull = closestSource.strongestGravitationalPull;
         
         if (strongestGravitationalPull.sqrMagnitude < _weakestGravityStrength)
         {
@@ -172,16 +143,9 @@ public class PlayerMovementController : MonoBehaviour
         else
         {
             InputCatcher.CurrentInputState = PlayerInputState.Gravity;
-            Vector3 gravityUp = -strongestGravitationalPull.normalized;
-
-            Quaternion deltaRotation = Quaternion.FromToRotation(transform.up, gravityUp);
-            Quaternion targetRotation = deltaRotation * _rb.rotation;
-            
-            float cameraSmoothSpeed = _gravitySmoothingMax / (1f + closestBody.DistanceToSurface(_rb.position) * 0.1f);
-            Quaternion easedRot = Quaternion.Slerp(_rb.rotation, targetRotation, cameraSmoothSpeed * Time.fixedDeltaTime);
-            _rb.rotation = easedRot;
+            SpaceUtils.RotateObjectToSourceUp(this, closestSource);
         }
         
-        _rb.MovePosition(_rb.position + _movementInput * Time.fixedDeltaTime);
+        rb.MovePosition(rb.position + _movementInput * Time.fixedDeltaTime);
     }
 }

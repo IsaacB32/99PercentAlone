@@ -6,6 +6,8 @@ public class GravityCylinder : GravitySource
     [Header("Cylinder Settings")]
     [SerializeField] private float _width;
 
+    public override float Size => Mathf.Max(_width, _size);
+
     private Vector3 _linePointQ;
     private Vector3 _linePointR;
 

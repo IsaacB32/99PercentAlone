@@ -69,5 +69,4 @@ public static class MathUtils
         }
 
     #endregion
-    
 }

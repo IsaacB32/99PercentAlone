@@ -8,7 +8,7 @@ public class GravityPlane : GravitySource
     
     //===== Properties =====
 
-    public override float Mass => _surfaceGravity * _size * _width / GRAVITATIONAL_CONST;
+    public override float Mass => _surfaceGravity * _size * _width / (SpaceUtils.GRAVITATIONAL_CONST * 0.1f);
 
     public override Vector3 VectorToCenter(Vector3 objectPosition)
     {
