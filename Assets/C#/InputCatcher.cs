@@ -2,6 +2,13 @@ using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+public enum PlayerInputState
+{
+    Menu,
+    Gravity,
+    Weightless
+} 
+
 public class InputCatcher : MonoBehaviour
 {
     public static InputCatcher Instance;
