@@ -2,6 +2,13 @@ using System;
 using System.Linq;
 using UnityEngine;
 
+public enum GravityBodyType
+{
+    Source,
+    Directional,
+    Reassign
+}
+
 /// <summary>
 /// Physics objects that are effected by the gravity system
 /// </summary>
@@ -12,58 +19,171 @@ public class GravityBody : MonoBehaviour
     [SerializeField] protected float _weakestGravityStrength = 1f;
     [Tooltip("the max speed the parent object slerps at when changing movement states")] 
     [SerializeField] protected float _gravitySmoothingMax = 5f;
+    [SerializeField] private float _directionalAcceleration = -9.8f;
     
     [Header("Static Gravity Sources")]
     [Tooltip("GravitySources that are always calculated")]
     [SerializeField] protected GravitySource[] _staticGravitySources;
     
     //===== References =====
-    public Rigidbody rb { get; private set; }
-    public GravitySource[] Sources { get; private set; } = Array.Empty<GravitySource>();
-    public float WeakestGravityStrength => _weakestGravityStrength;
-    public float GravitySmoothingMax => _gravitySmoothingMax;
+    protected Rigidbody _rb { get; private set; }
+    
+    //===== Gravity =====
+    private Action CurrentGravitySystem;
+    private GravitySource[] _sources = Array.Empty<GravitySource>();
+    public Vector3 DirectionalGravity { get; set; } = Vector3.zero;
+    
+    private GravityBodyType _gravityType = GravityBodyType.Source; 
+    public GravityBodyType GravityType
+    {
+        get => _gravityType;
+        set
+        {
+            switch (value)
+            {
+                case GravityBodyType.Directional when DirectionalGravity == Vector3.zero:
+                    throw new Exception("Directional gravity selected but vector = zero");
+                case GravityBodyType.Reassign:
+                    FindEffectors();
+                    break;
+                case GravityBodyType.Source:
+                    CurrentGravitySystem = ApplySourceGravity;
+                    break;
+                case GravityBodyType.Directional:
+                    CurrentGravitySystem = ApplyDirectionalGravity;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(value), value, null);
+            }
+
+            _gravityType = value;
+        }
+    }
     
     protected void Awake()
     {
-        rb = GetComponent<Rigidbody>();
-        FindField();
+        _rb = GetComponent<Rigidbody>();
+        GravityType = _gravityType;
+        FindEffectors();
     } 
- 
-    /// <summary>
-    /// Check a unit sphere around the object to check if started inside a GravityField
-    /// </summary>
-    private void FindField()
-    {
-        Collider[] hits = Physics.OverlapSphere(transform.position, 1, Layers.ToLayerMask(Layers.GravityField));
-        foreach (Collider hit in hits)   
-        {
-            if (hit.isTrigger)
-            {
-                GravityField field = hit.GetComponent<GravityField>();
-                field.ApplySourcesToBody(this);
-            }
-        }
-    }
-
+    
+    //===== Gravity Applications =====
+    
     protected void FixedUpdate()
     {
-        ApplyGravity();
+        CurrentGravitySystem();
+    }
+    
+    protected virtual void ApplySourceGravity()
+    {
+        GetClosestSourceToObject(out Vector3 pull, out float? distanceToSurface);
+        RotateObjectToSourceUp(pull, distanceToSurface);
     }
 
+    protected virtual void ApplyDirectionalGravity()
+    {
+        Vector3 acceleration = DirectionalGravity * _directionalAcceleration;
+        _rb.AddForce(acceleration, ForceMode.Acceleration);
+        
+        Vector3 gravityUp = DirectionalGravity.normalized;
+        Quaternion deltaRotation = Quaternion.FromToRotation(transform.up, gravityUp);
+        Quaternion targetRotation = deltaRotation * _rb.rotation;
+        
+        Quaternion easedRot = Quaternion.Slerp(_rb.rotation, targetRotation, _gravitySmoothingMax * Time.fixedDeltaTime);
+        _rb.rotation = easedRot;
+        
+    }
+
+    #region Gravity Calculations
+
+    /// <summary>
+    /// Apply all source gravity to the object and return the closest source
+    /// </summary>
+    /// <param name="pull">the pull of the closest source</param>
+    /// <param name="distanceToSurface">distance from the object to the source surface</param>
+    protected GravitySource GetClosestSourceToObject(out Vector3 pull, out float? distanceToSurface)
+    {
+        GravitySource closestSource = null;
+        pull = Vector3.zero;
+        foreach (GravitySource body in _sources)
+        {
+            Vector3 vectorToCenter = body.VectorToCenter(_rb.position);
+            float sqrDst = vectorToCenter.sqrMagnitude;
+            Vector3 forceDir = vectorToCenter.normalized;
+            Vector3 acceleration = forceDir * SpaceUtils.GRAVITATIONAL_CONST * body.Mass / sqrDst;
+            
+            _rb.AddForce(acceleration, ForceMode.Acceleration);
+        
+            if (acceleration.sqrMagnitude > pull.sqrMagnitude)
+            {
+                pull = acceleration;
+                closestSource = body;
+            }
+        }
+
+        distanceToSurface = closestSource?.DistanceToSurface(_rb.position);
+        return closestSource;
+    }
+
+    /// <summary>
+    /// Rotate the object to the up direction of a given source
+    /// </summary>
+    /// <param name="pull">pull of the source object</param>
+    /// <param name="distanceToSurface">distance to the surface of the source</param>
+    protected void RotateObjectToSourceUp(Vector3 pull, float? distanceToSurface)
+    {
+        if (!distanceToSurface.HasValue) return;
+        if (!(pull.sqrMagnitude >= _weakestGravityStrength)) return;
+        
+        Vector3 gravityUp = -pull.normalized;
+        
+        Quaternion deltaRotation = Quaternion.FromToRotation(transform.up, gravityUp);
+        Quaternion targetRotation = deltaRotation * _rb.rotation;
+        
+        float cameraSmoothSpeed = _gravitySmoothingMax / (1f + distanceToSurface.Value * 0.1f);
+        Quaternion easedRot = Quaternion.Slerp(_rb.rotation, targetRotation, cameraSmoothSpeed * Time.fixedDeltaTime);
+        _rb.rotation = easedRot;
+    }
+
+    #endregion
+    
+    //===== Gravity Triggers =====
+    
     public void UpdateGravitySources(GravitySource[] sources)
     {
-        if (Sources.Length != 0) Debug.LogWarning("GravitySources where changed unexpectedly");
-        Sources = _staticGravitySources.Concat(sources).ToArray();
+        _sources = _staticGravitySources.Concat(sources).ToArray();
     }
 
     public void RemoveGravitySources()
     {
-        Sources = Array.Empty<GravitySource>();
+        UpdateGravitySources(Array.Empty<GravitySource>());
     }
     
-    public virtual void ApplyGravity()
+    /// <summary>
+    /// A unit sphere to check if started inside a GravityEventTrigger
+    /// </summary>
+    private void FindEffectors()
     {
-        SpaceUtils.RelativeGravitySource closestSource = SpaceUtils.GetClosestSourceToObject(this);
-        SpaceUtils.RotateObjectToSourceUp(this, closestSource);
+        bool hasDirectionalTrigger = false;
+        Collider[] hits = Physics.OverlapSphere(transform.position, 0.5f, Layers.ToLayerMask(Layers.GravityTrigger));
+        foreach (Collider hit in hits)   
+        {
+            if (hit.isTrigger)
+            {
+                GravityEventTrigger trigger = hit.GetComponent<GravityEventTrigger>();
+                trigger.OnGravityBodyEnter(this);
+
+                if (hasDirectionalTrigger) Debug.LogWarning("Two directional triggers found, possible errors!");
+                hasDirectionalTrigger = hasDirectionalTrigger || trigger is GravityDirectionalTrigger;
+            }
+        }
+        
+        GravityType = hasDirectionalTrigger ? GravityBodyType.Directional : GravityBodyType.Source;
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.aquamarine;
+        Gizmos.DrawWireSphere(transform.position, 0.5f);
     }
 }

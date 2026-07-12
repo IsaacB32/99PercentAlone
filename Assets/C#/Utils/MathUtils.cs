@@ -63,10 +63,11 @@ public static class MathUtils
             return Vector3.Distance(p, closest);
         }
         
-        public static float DistanceToSurface(Vector3 pos, Vector3 planet, float radius)
+        public static float DistanceToSurface(Vector3 Q, Vector3 R, float offset)
         {
-            return Vector3.Distance(pos, planet) - radius;
+            return Vector3.Distance(Q, R) - offset;
         }
+    
 
     #endregion
 }

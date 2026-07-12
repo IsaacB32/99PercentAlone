@@ -1,34 +1,23 @@
-using System;
-using System.Linq;
 using CustomAttributes;
-using JetBrains.Annotations;
 using UnityEngine;
 
 /// <summary>
-/// A collection of GravitySources that will set as the objects gravity objects
+/// Updates the GravityBody sources when triggered
 /// </summary>
 [RequireComponent(typeof(SphereCollider))]
-public class GravityField : MonoBehaviour
+public class GravityFieldTrigger : GravityEventTrigger
 {
     [SerializeField] private float _radius = 20f;
     [SerializeField] private GravitySource[] _sources;
     
-    public void ApplySourcesToBody(GravityBody body) { body.UpdateGravitySources(_sources); }
-
-    private void OnTriggerEnter(Collider other)
+    public override void OnGravityBodyEnter(GravityBody body)
     {
-        if (other.TryGetComponent(out GravityBody body))
-        {
-            body.UpdateGravitySources(_sources);
-        }
+        body.UpdateGravitySources(_sources); 
     }
 
-    private void OnTriggerExit(Collider other)
+    protected override void OnGravityBodyExit(GravityBody body)
     {
-        if (other.TryGetComponent(out GravityBody body))
-        {
-            body.RemoveGravitySources();
-        }
+        body.RemoveGravitySources();
     }
 
     /// <summary>
@@ -38,6 +27,7 @@ public class GravityField : MonoBehaviour
     private void FindFarthestSource()
     {
         float largestDistance = 0f;
+        // ReSharper disable once LoopCanBeConvertedToQuery
         foreach (GravitySource source in _sources)
         {
             if (!source) continue;
@@ -56,7 +46,7 @@ public class GravityField : MonoBehaviour
     private void AssignChildrenToSource()
     {
         GravitySource[] childrenSources = transform.GetComponentsInChildren<GravitySource>();
-        _sources = _sources.Concat(childrenSources).ToArray();
+        _sources = childrenSources;
         FindFarthestSource();
     }
     
@@ -66,8 +56,10 @@ public class GravityField : MonoBehaviour
         Gizmos.DrawWireSphere(transform.position, _radius);
     }
 
-    private void OnValidate()
+    protected override void OnValidate()
     {
+        base.OnValidate();
+        
         SphereCollider collider = GetComponent<SphereCollider>();
         collider.radius = _radius;
         collider.isTrigger = true;

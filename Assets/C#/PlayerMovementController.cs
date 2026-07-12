@@ -65,7 +65,7 @@ public class PlayerMovementController : GravityBody
     {
         _isThrusting = true;
         if (!InputCatcher.IsGrounded) return;
-        rb.AddForce(transform.up * _jumpForce, ForceMode.VelocityChange);
+        _rb.AddForce(transform.up * _jumpForce, ForceMode.VelocityChange);
     }
 
     private void OnJumpReleased()
@@ -86,10 +86,18 @@ public class PlayerMovementController : GravityBody
 
     #endregion
 
-    #region Movement States
-
+    //===== Movement States =====
+    
+    private void Update()
+    {
+        CurrentMovement();
+    }
+    
     private void GravityMovement()
     {
+        //stick to ground force
+        if (InputCatcher.IsGrounded && !_isThrusting) _rb.AddForce(-transform.up * _stickToGroundForce, ForceMode.VelocityChange); 
+        
         float currentSpeed = InputCatcher.IsRunning ? _runSpeed : _walkSpeed;
         Vector3 targetVelocity = _playerBody.TransformDirection(InputCatcher.MovementVector.normalized) * currentSpeed;
         float smoothTime = (InputCatcher.IsGrounded) ? _groundSmoothTime : _airSmoothTime;
@@ -124,28 +132,32 @@ public class PlayerMovementController : GravityBody
         throw new NotImplementedException();
     }
 
-    #endregion
+    //===== Gravity Applications =====
     
-    private void Update()
+    protected new void FixedUpdate()
     {
-        CurrentMovement();
+        base.FixedUpdate();
+        _rb.MovePosition(_rb.position + _movementInput * Time.fixedDeltaTime);
     }
     
-    public override void ApplyGravity()
+    protected override void ApplySourceGravity()
     {
-        SpaceUtils.RelativeGravitySource closestSource = SpaceUtils.GetClosestSourceToObject(this);
-        Vector3 strongestGravitationalPull = closestSource.strongestGravitationalPull;
+        GetClosestSourceToObject(out Vector3 strongestPull, out float? distanceToSurface);
         
-        if (strongestGravitationalPull.sqrMagnitude < _weakestGravityStrength)
+        if (strongestPull.sqrMagnitude < _weakestGravityStrength || !distanceToSurface.HasValue)
         {
             InputCatcher.CurrentInputState = PlayerInputState.Weightless;
         }
         else
         {
             InputCatcher.CurrentInputState = PlayerInputState.Gravity;
-            SpaceUtils.RotateObjectToSourceUp(this, closestSource);
+            RotateObjectToSourceUp(strongestPull, distanceToSurface);
         }
-        
-        rb.MovePosition(rb.position + _movementInput * Time.fixedDeltaTime);
+    }
+
+    protected override void ApplyDirectionalGravity()
+    {
+        InputCatcher.CurrentInputState = PlayerInputState.Gravity;
+        base.ApplyDirectionalGravity();
     }
 }

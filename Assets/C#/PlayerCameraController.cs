@@ -9,8 +9,8 @@ public class PlayerCameraController : MonoBehaviour
     [SerializeField] private float _minVerticalAngle = -90f;
     [SerializeField] private float _maxVerticalAngle = 90f;
 
+    //Lower = more responsive. 0.02-0.04 feels snappy, 0.1+ feels floaty/laggy
     [Header("Smoothing")]
-    [Tooltip("Lower = more responsive. 0.02-0.04 feels snappy, 0.1+ feels floaty/laggy.")]
     [SerializeField] private float _gravitySmoothTime = 0.02f;
     [SerializeField] private float _spaceSmoothTime = 0.012f;
     private float _cameraSmoothingTime;
@@ -43,6 +43,13 @@ public class PlayerCameraController : MonoBehaviour
     [SerializeField] private float _landingShakeIntensity = 0.15f;
     [SerializeField] private float _landingShakeDuration = 0.3f;
     [SerializeField] private float _landingShakeFrequency = 25f;
+    
+    [Header("Collision Settings")]
+    [SerializeField] private LayerMask _collisionMask;
+    [SerializeField] private float _collisionRadius = 0.2f;
+    [SerializeField] private float _collisionSmoothingTime = 0.05f;
+    [SerializeField] private float collisionBuffer = 0.1f;
+    [SerializeField] private float minDistanceFromPivot = 0.05f;
 
     //===== References =====
     private Camera _playerCamera;
@@ -67,8 +74,11 @@ public class PlayerCameraController : MonoBehaviour
     private float _landingShakeSeed;
     private bool _wasGrounded = true;
     
-    //===== Movement States =====
-    // private Action<Vector2> CurrentMovement;
+    //===== Wall Collision Settings =====
+    private Vector3 _basePosition;
+    private float _currentCollisionDistance;
+    private float _currentCollisionSmoothRef; //useless SmoothDamp value
+
 
     private void Awake()
     {
@@ -76,7 +86,8 @@ public class PlayerCameraController : MonoBehaviour
         _playerBody = transform.parent;
         _parentObject = _playerBody.parent;
 
-        // CurrentMovement = GravityMovement;
+        _basePosition = transform.localPosition;
+        _currentCollisionDistance = _basePosition.magnitude;
     }
 
     private void Start()
@@ -115,20 +126,11 @@ public class PlayerCameraController : MonoBehaviour
         _cameraRotation.y -= lookVector.y * mouseSensitivity;
 
         CameraMovement(lookVector);
-        // CurrentMovement(lookVector);
     }
     
     
     private void OnSwitchInputState(PlayerInputState newState)
     {
-        // CurrentMovement = newState switch
-        // {
-        //     PlayerInputState.Gravity => GravityMovement,
-        //     PlayerInputState.Weightless => WeightlessMovement,
-        //     PlayerInputState.Menu => MenuMovement,
-        //     _ => throw new ArgumentOutOfRangeException(nameof(newState), newState, null)
-        // };
-
         _cameraSmoothingTime = newState switch
         {
             PlayerInputState.Gravity => _gravitySmoothTime,
@@ -140,8 +142,6 @@ public class PlayerCameraController : MonoBehaviour
     
     #endregion
     
-    #region Movement States
-
     private void CameraMovement(Vector2 lookVector)
     {
         _cameraRotation.y = Mathf.Clamp(_cameraRotation.y - lookVector.y * mouseSensitivity, _minVerticalAngle, _maxVerticalAngle);
@@ -154,187 +154,133 @@ public class PlayerCameraController : MonoBehaviour
         _playerBody.Rotate(Vector3.up * Mathf.DeltaAngle(smoothXOld, _cameraSmoothing.x), Space.Self);
     } 
     
-    // private void GravityMovement(Vector2 lookVector)
-    // {
-    //     _yRotation = Mathf.Clamp(_yRotation - lookVector.y * mouseSensitivity, _minVerticalAngle, _maxVerticalAngle);
-    //     _smoothYRot = Mathf.SmoothDampAngle(_smoothYRot, _yRotation, ref _smoothYRef, _smoothTime);
-    //     
-    //     float smoothXOld = _smoothXRot;
-    //     _smoothXRot = Mathf.SmoothDampAngle(_smoothXRot, _xRotation, ref _smoothXRef, _smoothTime);
-    //     
-    //     transform.localEulerAngles = Vector3.right * _smoothYRot;
-    //     _playerBody.Rotate(Vector3.up * Mathf.DeltaAngle(smoothXOld, _smoothXRot), Space.Self);
-    // }
-    //
-    // private void WeightlessMovement(Vector2 lookVector)
-    // {
-    //     float smoothYOld = _smoothYRot;
-    //     _smoothYRot = Mathf.SmoothDampAngle(_smoothYRot, _yRotation, ref _smoothYRef, _spaceSmoothTime);
-    //     
-    //     float smoothXOld = _smoothXRot;
-    //     _smoothXRot = Mathf.SmoothDampAngle(_smoothXRot, _xRotation, ref _smoothXRef, _spaceSmoothTime);
-    //     
-    //     // Vector3 rotationVector = new Vector3(Mathf.DeltaAngle (smoothYOld, _smoothYRot), Mathf.DeltaAngle (smoothXOld, _smoothXRot));
-    //     // _parentObject.Rotate(rotationVector, Space.Self);
-    //     
-    //     transform.localEulerAngles = Vector3.right * _smoothYRot;
-    //     _playerBody.Rotate(Vector3.up * Mathf.DeltaAngle(smoothXOld, _smoothXRot), Space.Self);
-    // }
-    
-    #endregion
-    
     void Update()
     {
         HandleZoom();
         HandleCameraShake();
+        HandleWallCollisions();
     }
+
+    #region Camera Handlers
+
+        private void HandleZoom()
+        {
+            bool isPlayerRunning = InputCatcher.IsRunning;
     
-    private void HandleZoom()
-    {
-        bool isPlayerRunning = InputCatcher.IsRunning;
-
-        if (InputCatcher.IsAiming) _targetFOV = _zoomedFOV;
-        else if (InputCatcher.CurrentInputState == PlayerInputState.Gravity && isPlayerRunning) _targetFOV = _runningFOV;
-        else  _targetFOV = _normalFOV;
-
-        float zoomT = 1f - Mathf.Exp(-_zoomSpeed * Time.deltaTime);
-        _currentFOV = Mathf.Lerp(_currentFOV, _targetFOV, zoomT);
-
-        if (_playerCamera != null)  _playerCamera.fieldOfView = _currentFOV;
-    }
-
-    private void HandleCameraShake()
-    {
-        if (!_enableCameraShake)
+            if (InputCatcher.IsAiming) _targetFOV = _zoomedFOV;
+            else if (InputCatcher.CurrentInputState == PlayerInputState.Gravity && isPlayerRunning) _targetFOV = _runningFOV;
+            else  _targetFOV = _normalFOV;
+    
+            float zoomT = 1f - Mathf.Exp(-_zoomSpeed * Time.deltaTime);
+            _currentFOV = Mathf.Lerp(_currentFOV, _targetFOV, zoomT);
+    
+            if (_playerCamera != null)  _playerCamera.fieldOfView = _currentFOV;
+        }
+    
+        private void HandleCameraShake()
         {
-            _cameraShakeOffset = Vector3.MoveTowards(_cameraShakeOffset, Vector3.zero, Time.deltaTime);
-            return;
+            if (!_enableCameraShake)
+            {
+                _cameraShakeOffset = Vector3.MoveTowards(_cameraShakeOffset, Vector3.zero, Time.deltaTime);
+                return;
+            }
+    
+            bool isGrounded = InputCatcher.IsGrounded;
+            bool isMoving = InputCatcher.IsMoving;
+            bool isRunning = InputCatcher.IsRunning;
+    
+            // Detect landing
+            if (isGrounded && !_wasGrounded)
+            {
+                _landingShakeTimer = _landingShakeDuration;
+                _landingShakeSeed = Random.value * 100f;
+            }
+            _wasGrounded = isGrounded;
+            
+            float targetAmount = 0f;
+            float targetFreq = _walkBobFrequency;
+            if (isMoving && isGrounded)
+            {
+                targetAmount = isRunning ? _runBobAmount : _walkBobAmount;
+                targetFreq = isRunning ? _runBobFrequency : _walkBobFrequency;
+            }
+    
+            if (InputCatcher.IsAiming)
+            {
+                targetAmount *= _aimShakeMultiplier;
+            }
+    
+            float t = 1f - Mathf.Exp(-_bobSmoothing * Time.deltaTime);
+            _currentBobAmount = Mathf.Lerp(_currentBobAmount, targetAmount, t);
+            _currentBobFreq = Mathf.Lerp(_currentBobFreq, targetFreq, t);
+            
+            if (_currentBobAmount > 0.0001f)
+            {
+                _bobPhase += _currentBobFreq * 2f * Mathf.PI * Time.deltaTime;
+                if (_bobPhase > Mathf.PI * 2f) _bobPhase -= Mathf.PI * 2f;
+            }
+            else
+            {
+                _bobPhase = Mathf.LerpAngle(_bobPhase * Mathf.Rad2Deg, 0f, t) * Mathf.Deg2Rad;
+            }
+    
+            // Vertical bob: full sine. Horizontal sway: half-frequency cosine so it alternates left/right per step.
+            float bobY = Mathf.Sin(_bobPhase) * _currentBobAmount;
+            float bobX = Mathf.Cos(_bobPhase * 0.5f) * _currentBobAmount * _bobHorizontalRatio;
+            Vector3 bobOffset = new Vector3(bobX, bobY, 0f);
+    
+            // --- Landing shake (impulse, decays over duration) ---
+            Vector3 landingOffset = Vector3.zero;
+            if (_landingShakeTimer > 0f)
+            {
+                _landingShakeTimer -= Time.deltaTime;
+                float decay = Mathf.Clamp01(_landingShakeTimer / _landingShakeDuration);
+                float amp = decay * decay * _landingShakeIntensity; // ease-out
+                float n = Time.time * _landingShakeFrequency;
+                float lx = (Mathf.PerlinNoise(n, _landingShakeSeed) - 0.5f) * 2f;
+                float ly = (Mathf.PerlinNoise(_landingShakeSeed, n) - 0.5f) * 2f;
+                landingOffset = new Vector3(lx * amp * 0.5f, ly * amp, 0f);
+            }
+    
+            _cameraShakeOffset = bobOffset + landingOffset;
+        }
+    
+        private void HandleWallCollisions()
+        {
+            Vector3 desiredOffset = _basePosition + _cameraShakeOffset;
+            float desiredDistance = desiredOffset.magnitude;
+    
+            if (desiredDistance < Mathf.Epsilon)
+            {
+                transform.localPosition = desiredOffset;
+                _currentCollisionDistance = desiredDistance;
+                return;
+            }
+    
+            Vector3 pivotWorld = _playerBody.position;
+            Vector3 desiredWorld = _playerBody.TransformPoint(desiredOffset);
+            Vector3 dir = (desiredWorld - pivotWorld).normalized;
+    
+            float targetDistance = desiredDistance;
+            RaycastHit[] hits = Physics.SphereCastAll(pivotWorld, _collisionRadius, dir, desiredDistance, _collisionMask, QueryTriggerInteraction.Ignore);
+            float closest = float.PositiveInfinity;
+            foreach (RaycastHit hit in hits)
+            {
+                if (hit.distance <= 0f) continue;
+                if (hit.distance < closest) closest = hit.distance;
+            }
+            if (closest < float.PositiveInfinity)
+            {
+                targetDistance = Mathf.Max(minDistanceFromPivot, closest - collisionBuffer);
+            }
+            
+            _currentCollisionDistance = Mathf.SmoothDamp(_currentCollisionDistance, targetDistance, ref _currentCollisionSmoothRef, _collisionSmoothingTime);
+    
+            // Scale the desired offset to the clamped distance (preserves direction in local space)
+            Vector3 finalOffset = desiredOffset.normalized * _currentCollisionDistance;
+            transform.localPosition = finalOffset;
         }
 
-        bool isGrounded = InputCatcher.IsGrounded;
-        bool isMoving = InputCatcher.IsMoving;
-        bool isRunning = InputCatcher.IsRunning;
+    #endregion
 
-        // Detect landing
-        if (isGrounded && !_wasGrounded)
-        {
-            _landingShakeTimer = _landingShakeDuration;
-            _landingShakeSeed = Random.value * 100f;
-        }
-        _wasGrounded = isGrounded;
-        
-        float targetAmount = 0f;
-        float targetFreq = _walkBobFrequency;
-        if (isMoving && isGrounded)
-        {
-            targetAmount = isRunning ? _runBobAmount : _walkBobAmount;
-            targetFreq = isRunning ? _runBobFrequency : _walkBobFrequency;
-        }
-
-        if (InputCatcher.IsAiming)
-        {
-            targetAmount *= _aimShakeMultiplier;
-        }
-
-        float t = 1f - Mathf.Exp(-_bobSmoothing * Time.deltaTime);
-        _currentBobAmount = Mathf.Lerp(_currentBobAmount, targetAmount, t);
-        _currentBobFreq = Mathf.Lerp(_currentBobFreq, targetFreq, t);
-        
-        if (_currentBobAmount > 0.0001f)
-        {
-            _bobPhase += _currentBobFreq * 2f * Mathf.PI * Time.deltaTime;
-            if (_bobPhase > Mathf.PI * 2f) _bobPhase -= Mathf.PI * 2f;
-        }
-        else
-        {
-            _bobPhase = Mathf.LerpAngle(_bobPhase * Mathf.Rad2Deg, 0f, t) * Mathf.Deg2Rad;
-        }
-
-        // Vertical bob: full sine. Horizontal sway: half-frequency cosine so it alternates left/right per step.
-        float bobY = Mathf.Sin(_bobPhase) * _currentBobAmount;
-        float bobX = Mathf.Cos(_bobPhase * 0.5f) * _currentBobAmount * _bobHorizontalRatio;
-        Vector3 bobOffset = new Vector3(bobX, bobY, 0f);
-
-        // --- Landing shake (impulse, decays over duration) ---
-        Vector3 landingOffset = Vector3.zero;
-        if (_landingShakeTimer > 0f)
-        {
-            _landingShakeTimer -= Time.deltaTime;
-            float decay = Mathf.Clamp01(_landingShakeTimer / _landingShakeDuration);
-            float amp = decay * decay * _landingShakeIntensity; // ease-out
-            float n = Time.time * _landingShakeFrequency;
-            float lx = (Mathf.PerlinNoise(n, _landingShakeSeed) - 0.5f) * 2f;
-            float ly = (Mathf.PerlinNoise(_landingShakeSeed, n) - 0.5f) * 2f;
-            landingOffset = new Vector3(lx * amp * 0.5f, ly * amp, 0f);
-        }
-
-        _cameraShakeOffset = bobOffset + landingOffset;
-    }
 }
-
-/*
- 
-     // [Header("Wall Collision Settings")]
-   // [SerializeField] private bool _enableWallCollision = true;
-   // [SerializeField] private LayerMask _wallCollisionMask = ~0;
-   // [SerializeField] private float _collisionRadius = 0.2f;
-   // [SerializeField] private float _collisionBuffer = 0.1f;
-   // [SerializeField] private float _collisionSmoothTime = 0.05f;
-   // [SerializeField] private float _minDistanceFromPivot = 0.05f;
- 
-     // Wall collision variables
-   private float _currentCollisionDistance;
-   private float _collisionDistanceVelocity;
-   private Collider[] _ownColliders;
- * private void LateUpdate()
-   {
-       ApplyCameraPosition();
-   }
-   
-   private void ApplyCameraPosition()
-   {
-       // if (_playerBody == null)
-       // {
-       //     transform.localPosition = _baseLocalPosition + _cameraShakeOffset;
-       //     return;
-       // }
-       //
-       // Vector3 desiredOffset = _baseLocalPosition + _cameraShakeOffset;
-       // float desiredDistance = desiredOffset.magnitude;
-       //
-       // if (!_enableWallCollision || desiredDistance < Mathf.Epsilon)
-       // {
-       //     transform.localPosition = desiredOffset;
-       //     _currentCollisionDistance = desiredDistance;
-       //     return;
-       // }
-       //
-       // Vector3 pivotWorld = _playerBody.position;
-       // Vector3 desiredWorld = _playerBody.TransformPoint(desiredOffset);
-       // Vector3 dir = (desiredWorld - pivotWorld).normalized;
-       //
-       // float targetDistance = desiredDistance;
-       // RaycastHit[] hits = Physics.SphereCastAll(pivotWorld, _collisionRadius, dir, desiredDistance, _wallCollisionMask, QueryTriggerInteraction.Ignore);
-       // float closest = float.PositiveInfinity;
-       // foreach (RaycastHit hit in hits)
-       // {
-       //     if (IsOwnCollider(hit.collider) || hit.distance <= 0f) continue;
-       //     if (hit.distance < closest) closest = hit.distance;
-       // }
-       //
-       // if (closest < float.PositiveInfinity)
-       // {
-       //     targetDistance = Mathf.Max(_minDistanceFromPivot, closest - _collisionBuffer);
-       // }
-       //
-       // _currentCollisionDistance = Mathf.SmoothDamp(_currentCollisionDistance, targetDistance, ref _collisionDistanceVelocity, _collisionSmoothTime);
-       // Vector3 finalOffset = desiredOffset.normalized * _currentCollisionDistance;
-       // transform.localPosition = finalOffset;
-   }
-
-   private bool IsOwnCollider(Collider c)
-   {
-       if (c == null || _ownColliders == null) return false;
-       return _ownColliders.Any(col => col == c);
-   }
- */

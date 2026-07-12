@@ -2,7 +2,6 @@ using UnityEngine;
 
 public class GravityPlane : GravitySource
 {
-    [Header("Plane Settings")]
     [SerializeField] private float _width = 1f;
     [SerializeField] private float _thickness = 1f;
     

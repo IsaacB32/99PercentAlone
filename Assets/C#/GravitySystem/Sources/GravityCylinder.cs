@@ -3,9 +3,7 @@ using UnityEngine;
 
 public class GravityCylinder : GravitySource
 {
-    [Header("Cylinder Settings")]
     [SerializeField] private float _width;
-
     public override float Size => Mathf.Max(_width, _size);
 
     private Vector3 _linePointQ;
@@ -33,7 +31,7 @@ public class GravityCylinder : GravitySource
 
     public override float DistanceToSurface(Vector3 objectPosition)
     {
-        return MathUtils.DistanceToSurface(objectPosition, transform.position, _size);
+        return MathUtils.DistanceToSurface(objectPosition, transform.position, _size / 2f);
     }
 
     protected override void ValidateSize()
