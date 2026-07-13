@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class PlayerMovementController : GravityBody
 {
+    [Space]
     [SerializeField] private Transform _playerBody;
     private Transform _playerCamera;
     

@@ -105,19 +105,19 @@ public class GravityBody : MonoBehaviour
     {
         GravitySource closestSource = null;
         pull = Vector3.zero;
-        foreach (GravitySource body in _sources)
+        foreach (GravitySource source in _sources)
         {
-            Vector3 vectorToCenter = body.VectorToCenter(_rb.position);
+            Vector3 vectorToCenter = source.VectorToCenter(_rb.position);
             float sqrDst = vectorToCenter.sqrMagnitude;
             Vector3 forceDir = vectorToCenter.normalized;
-            Vector3 acceleration = forceDir * SpaceUtils.GRAVITATIONAL_CONST * body.Mass / sqrDst;
+            Vector3 acceleration = forceDir * SpaceUtils.GRAVITATIONAL_CONST * source.Mass / sqrDst;
             
             _rb.AddForce(acceleration, ForceMode.Acceleration);
         
             if (acceleration.sqrMagnitude > pull.sqrMagnitude)
             {
                 pull = acceleration;
-                closestSource = body;
+                closestSource = source;
             }
         }
 
