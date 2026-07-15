@@ -1,0 +1,50 @@
+using System;
+using Isaac.Attributes;
+using UnityEngine;
+
+/// <summary>
+/// Handles interactions from the main camera with a raycast 
+/// </summary>
+public class Interactor : MonoBehaviour
+{
+    [Tooltip("Camera to process interactions from, leave empty to use main camera")]
+    [SerializeField] private bool _overrideMainCamera;
+    [SerializeField, ReadOnly(nameof(_overrideMainCamera), true)] private Camera _camera = null;
+
+    [SerializeField] private LayerMask _interactionLayerMask = Layers.Interaction;
+    [SerializeField] private float _interactionDistance = 5f;
+    
+    [Space]
+    [SerializeField] private bool _drawLook = false;
+
+    private Vector2 _mousePos;
+    
+    private void Awake()
+    {
+        if (_camera == null) _camera = Camera.main;
+    }
+    
+    private void LateUpdate()
+    {
+        Vector3 worldOrigin = _camera.ScreenToWorldPoint(InputCatcher.MousePosition);
+        if (Physics.Raycast(worldOrigin, transform.forward, out RaycastHit hit, _interactionDistance, _interactionLayerMask))
+        {
+            Interactable interactable = hit.transform.GetComponent<Interactable>();
+            Interactable.RefreshHovering(interactable);
+            
+            if (InputCatcher.InteractPressedThisFrame) interactable.OnSelect();
+        } 
+        else Interactable.RefreshHovering(null);
+    }
+
+    #if UNITY_EDITOR
+    
+    private void OnDrawGizmos()
+    {
+        if (!_drawLook || !Application.isPlaying) return;
+        Vector3 worldOrigin = _camera.ScreenToWorldPoint(InputCatcher.MousePosition);
+        Gizmos.DrawRay(worldOrigin, transform.forward * _interactionDistance);
+    }
+    
+    #endif
+}

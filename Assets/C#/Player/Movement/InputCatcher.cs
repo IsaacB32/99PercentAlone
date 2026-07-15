@@ -9,6 +9,9 @@ public enum PlayerInputState
     Weightless
 } 
 
+/// <summary>
+/// Catches input from PlayerController and distributes it to scripts that use input
+/// </summary>
 public class InputCatcher : MonoBehaviour
 {
     public static InputCatcher Instance;
@@ -33,7 +36,6 @@ public class InputCatcher : MonoBehaviour
         {
             if (Instance._currentPlayerInputState == value) return;
             
-            // Debug.Log($"Entering Input State - {value}");
             OnSwitchInputState?.Invoke(value);
             Instance._currentPlayerInputState = value;
         }
@@ -51,18 +53,21 @@ public class InputCatcher : MonoBehaviour
     [SerializeField] private float _mouseSensitivityX = 0.8f;
     [SerializeField] private float _mouseSensitivityY = 0.8f;
     [Range(0f, 1f)] [SerializeField] private float _aimSensitivityMultiplier = 0.5f;
-    // [Range(0f, 1f)] [SerializeField] private float _aimShakeMultiplier = 0.3f;
     
     //===== Input Properties =====
-
     private Vector3 _movementVector;
     public static Vector3 MovementVector => Instance._movementVector;
+
+    private Vector2 _mousePosition;
+    public static Vector2 MousePosition => Instance._mousePosition;
     
+    //===== Callbacks =====
     public static event Action<Vector3> OnMove;
     public static event Action<Vector2> OnLook;
     public static event Action OnJumpPressed;
     public static event Action OnJumpReleased;
     
+    //===== Toggles =====
     private bool _isGrounded;
     public static bool IsGrounded => Instance._isGrounded; 
 
@@ -74,8 +79,13 @@ public class InputCatcher : MonoBehaviour
     
     private bool _isAiming;
     public static bool IsAiming => Instance._isAiming;
+  
+    //===== Pressed this Frame =====
+    private int _interactPressedTime;
+    public static bool InteractPressedThisFrame => Instance._interactPressedTime == Time.frameCount;
     
-
+    //===== Input Action Callbacks =====
+    
     public void Movement(InputAction.CallbackContext context)
     {
         _isMoving = true;
@@ -108,7 +118,7 @@ public class InputCatcher : MonoBehaviour
 
     public void Interact(InputAction.CallbackContext context)
     {
-        
+        if (context.performed) _interactPressedTime = Time.frameCount;
     }
 
     public void Aim(InputAction.CallbackContext context)
@@ -122,7 +132,7 @@ public class InputCatcher : MonoBehaviour
         // Skip when the cursor is unlocked so menus don't yank the camera around
         if (_ignoreInputWhenCursorUnlocked && Cursor.lockState != CursorLockMode.Locked)
         {
-            // _lookVector = Vector2.zero;
+            _mousePosition = Vector2.zero;
             OnLook?.Invoke(Vector2.zero);
             return;
         }
@@ -139,8 +149,9 @@ public class InputCatcher : MonoBehaviour
 
         if (_invertMouse) mouseY = -mouseY;
 
-        // _lookVector = new Vector2(mouseX, mouseY);
-        OnLook?.Invoke(new Vector2(mouseX, mouseY));
+        Vector2 activeMouse = new Vector2(mouseX, mouseY);
+        _mousePosition = activeMouse;
+        OnLook?.Invoke(activeMouse);
     }
     
     //===== Other =====

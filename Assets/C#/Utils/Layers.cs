@@ -10,6 +10,7 @@ public static class Layers
     public const int UI = 5;
     public const int Ground = 6;
     public const int GravityTrigger = 7;
+    public const int Interaction = 8;
 
     public static int ToLayerMask(int layer)
     {

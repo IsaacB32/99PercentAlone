@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 1157496265141996987}
   - component: {fileID: 5688300053454479767}
   - component: {fileID: 2036618087941582490}
+  - component: {fileID: 4656626373707578325}
   - component: {fileID: 4797717998034214791}
   m_Layer: 0
   m_Name: FirstPersoneCamera
@@ -133,6 +134,25 @@ MonoBehaviour:
   _collisionSmoothingTime: 0.05
   collisionBuffer: 0.1
   minDistanceFromPivot: 0.05
+--- !u!114 &4656626373707578325
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1027955947808699983}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21968cec578069e32b14a96e344ae9ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Interactor
+  _overrideMainCamera: 0
+  _camera: {fileID: 0}
+  _interactionLayerMask:
+    serializedVersion: 2
+    m_Bits: 256
+  _interactionDistance: 5
+  _drawLook: 0
 --- !u!114 &4797717998034214791
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -506,7 +526,19 @@ MonoBehaviour:
     m_ActionId: 6c2ab1b8-8984-453a-af3d-a3c78ae1679a
     m_ActionName: 'Player/Attack[/Gamepad/buttonWest,/Mouse/leftButton,/Keyboard/enter]'
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 8138966229873891958}
+        m_TargetAssemblyTypeName: InputCatcher, Assembly-CSharp
+        m_MethodName: Interact
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: 852140f2-7766-474d-8707-702459ba45f3
     m_ActionName: 'Player/Interact[/Keyboard/e,/Gamepad/buttonNorth]'
   - m_PersistentCalls:
@@ -651,7 +683,7 @@ MonoBehaviour:
   _weightlessRotationSpeed: 1
   _weightlessSmoothingAmount: 0.05
   _jumpForce: 5
-  _stickToGroundForce: 2
+  _stickToGroundForce: 1
 --- !u!54 &7437151263894002277
 Rigidbody:
   m_ObjectHideFlags: 0
