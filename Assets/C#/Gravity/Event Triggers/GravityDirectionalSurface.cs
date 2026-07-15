@@ -1,4 +1,3 @@
-using System;
 using Isaac.Attributes;
 using UnityEngine;
 
