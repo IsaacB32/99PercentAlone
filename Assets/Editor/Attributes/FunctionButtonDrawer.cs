@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace CustomAttributes.Editor
+namespace Isaac.Attributes.Editor
 {
     internal static class FunctionButtonDrawer
     {

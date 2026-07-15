@@ -1,7 +1,7 @@
 using System;
 using JetBrains.Annotations;
 
-namespace CustomAttributes
+namespace Isaac.Attributes
 {
     /// <summary>
     /// Draw a method as a button in the Unity inspector

@@ -1,5 +1,5 @@
 using UnityEngine;
-using CustomAttributes;
+using Isaac.Attributes;
 
 /// <summary>
 /// Source of gravity

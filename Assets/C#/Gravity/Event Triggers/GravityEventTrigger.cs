@@ -1,4 +1,4 @@
-using CustomAttributes;
+using Isaac.Attributes;
 using UnityEngine;
 
 /// <summary>

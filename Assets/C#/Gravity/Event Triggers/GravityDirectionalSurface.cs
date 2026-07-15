@@ -1,5 +1,5 @@
 using System;
-using CustomAttributes;
+using Isaac.Attributes;
 using UnityEngine;
 
 /// <summary>

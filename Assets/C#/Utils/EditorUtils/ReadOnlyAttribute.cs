@@ -5,7 +5,7 @@
 using System;
 using UnityEngine;
 
-namespace CustomAttributes
+namespace Isaac.Attributes
 {
     /// <summary>
     /// Make the property ReadOnly

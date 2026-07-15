@@ -5,7 +5,7 @@
 using UnityEngine;
 using UnityEditor;
 
-namespace CustomAttributes.Editor
+namespace Isaac.Attributes.Editor
 {
     /// <summary>
     /// Draw ReadOnly properties according to their parameters

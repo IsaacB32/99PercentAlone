@@ -63,6 +63,8 @@ public class GravityBody : MonoBehaviour
     protected void Awake()
     {
         _rb = GetComponent<Rigidbody>();
+        _sources = _staticGravitySources;
+        
         GravityType = _gravityType;
         FindEffectors();
     } 
