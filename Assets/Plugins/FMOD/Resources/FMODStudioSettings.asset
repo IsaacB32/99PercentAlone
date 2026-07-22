@@ -380,11 +380,11 @@ MonoBehaviour:
   switchSettingsMigration: 1
   HasSourceProject: 1
   HasPlatforms: 1
-  sourceProjectPath: ../../Users/zevan/Music/fmod/Examples/Examples.fspro
-  sourceBankPath: ../../Users/zevan/Music/fmod/Examples/Build
+  sourceProjectPath: ../../Users/zevan/Music/fmod/try/try.fspro
+  sourceBankPath: ../../Users/zevan/Music/fmod/try/Build
   sourceBankPathUnformatted: 
-  BankRefreshCooldown: 5
-  ShowBankRefreshWindow: 1
+  BankRefreshCooldown: 1
+  ShowBankRefreshWindow: 0
   AutomaticEventLoading: 1
   BankLoadType: 0
   AutomaticSampleLoading: 0
@@ -406,13 +406,7 @@ MonoBehaviour:
   MasterBanks:
   - Master
   Banks:
-  - Dialogue_CN
-  - Dialogue_EN
-  - Dialogue_JP
-  - Music
-  - SFX
-  - Vehicles
-  - VO
+  - bankler
   BanksToLoad: []
   LiveUpdatePort: 9264
   EnableMemoryTracking: 0
