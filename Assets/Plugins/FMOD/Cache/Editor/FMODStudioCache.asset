@@ -194,10 +194,10 @@ MonoBehaviour:
   Path: ../../Users/zevan/Music/fmod/fried/Build/Desktop/Master.strings.bank
   Name: Master.strings
   StudioPath: bank:/Master.strings
-  lastModified: 639206253443237224
+  lastModified: 639206279237062450
   FileSizes:
   - Name: Desktop
-    Value: 1032
+    Value: 982
   Exists: 1
 --- !u!114 &-8127542749367522118
 MonoBehaviour:
@@ -1433,8 +1433,7 @@ MonoBehaviour:
   IsStream: 1
   Is3D: 1
   IsOneShot: 0
-  Parameters:
-  - {fileID: 4160999749390136149}
+  Parameters: []
   MinDistance: 1.2
   MaxDistance: 60
   Length: 77484
@@ -1889,7 +1888,7 @@ MonoBehaviour:
   StringsBanks:
   - {fileID: -8159624751059751045}
   cacheVersion: 131860
-  cacheTime: 639206253443237224
+  cacheTime: 639206279237062450
   SerializableEventsDict:
   - key: event:/greatevent/great goodness
     index: 0
@@ -2629,10 +2628,10 @@ MonoBehaviour:
   Path: ../../Users/zevan/Music/fmod/fried/Build/Desktop/Master.bank
   Name: Master
   StudioPath: bank:/Master
-  lastModified: 639206253443222173
+  lastModified: 639206279237062450
   FileSizes:
   - Name: Desktop
-    Value: 630880
+    Value: 656064
   Exists: 1
 --- !u!114 &4009373593783236310
 MonoBehaviour:
@@ -2690,30 +2689,6 @@ MonoBehaviour:
   MinDistance: 1
   MaxDistance: 20
   Length: 150857
---- !u!114 &4160999749390136149
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fecb8ef7f94ca804a8ab72049b86782e, type: 3}
-  m_Name: parameter:/great goodness/lookin
-  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorParamRef
-  Name: lookin
-  StudioPath: 
-  Min: 0
-  Max: 100
-  Default: 0
-  ID:
-    data1: 465930294
-    data2: 2058266360
-  Type: 0
-  IsGlobal: 0
-  Labels: []
-  Exists: 1
 --- !u!114 &4223104377956527933
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2729,10 +2704,10 @@ MonoBehaviour:
   Path: ../../Users/zevan/Music/fmod/fried/Build/Desktop/bankler.bank
   Name: bankler
   StudioPath: bank:/bankler
-  lastModified: 639206253442990417
+  lastModified: 639206279236835979
   FileSizes:
   - Name: Desktop
-    Value: 630336
+    Value: 655520
   Exists: 1
 --- !u!114 &4324515920237702922
 MonoBehaviour:
