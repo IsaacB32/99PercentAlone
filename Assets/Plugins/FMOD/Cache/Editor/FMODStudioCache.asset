@@ -179,6 +179,26 @@ MonoBehaviour:
   MinDistance: 1
   MaxDistance: 20
   Length: 917
+--- !u!114 &-8159624751059751045
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c18180ecb35941f4682ae60107b85b7c, type: 3}
+  m_Name: bank:/Master.strings.bank
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorBankRef
+  Path: ../../Users/zevan/Music/fmod/fried/Build/Desktop/Master.strings.bank
+  Name: Master.strings
+  StudioPath: bank:/Master.strings
+  lastModified: 639206253443237224
+  FileSizes:
+  - Name: Desktop
+    Value: 1032
+  Exists: 1
 --- !u!114 &-8127542749367522118
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -246,26 +266,6 @@ MonoBehaviour:
   Type: 0
   IsGlobal: 0
   Labels: []
-  Exists: 1
---- !u!114 &-7679106129418551999
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c18180ecb35941f4682ae60107b85b7c, type: 3}
-  m_Name: bank:/Master.bank
-  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorBankRef
-  Path: ../../Users/zevan/Music/fmod/try/Build/Desktop/Master.bank
-  Name: Master
-  StudioPath: bank:/Master
-  lastModified: 639202611531892253
-  FileSizes:
-  - Name: Desktop
-    Value: 625152
   Exists: 1
 --- !u!114 &-7604240941451274383
 MonoBehaviour:
@@ -647,6 +647,34 @@ MonoBehaviour:
   IsGlobal: 0
   Labels: []
   Exists: 1
+--- !u!114 &-5450259213162715431
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/greatevent/great goodness 2
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
+  Path: event:/greatevent/great goodness 2
+  Guid:
+    Data1: 1576465129
+    Data2: 1121169585
+    Data3: -1682429792
+    Data4: 91897231
+  Banks:
+  - {fileID: 4223104377956527933}
+  - {fileID: 3582666750603075070}
+  IsStream: 1
+  Is3D: 1
+  IsOneShot: 0
+  Parameters: []
+  MinDistance: 1.2
+  MaxDistance: 60
+  Length: 77484
 --- !u!114 &-5345292316001998604
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1400,16 +1428,16 @@ MonoBehaviour:
     Data3: 392478110
     Data4: -61616461
   Banks:
-  - {fileID: 6856103797254334676}
-  - {fileID: -7679106129418551999}
+  - {fileID: 4223104377956527933}
+  - {fileID: 3582666750603075070}
   IsStream: 1
   Is3D: 1
-  IsOneShot: 1
+  IsOneShot: 0
   Parameters:
   - {fileID: 4160999749390136149}
   MinDistance: 1.2
   MaxDistance: 60
-  Length: 77034
+  Length: 77484
 --- !u!114 &-1900928974560559147
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1849,21 +1877,24 @@ MonoBehaviour:
   m_Name: FMODStudioCache
   m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EventCache
   EditorBanks:
-  - {fileID: 4059917737434027316}
-  - {fileID: 6856103797254334676}
-  - {fileID: -7679106129418551999}
+  - {fileID: -8159624751059751045}
+  - {fileID: 4223104377956527933}
+  - {fileID: 3582666750603075070}
   EditorEvents:
   - {fileID: -2054829737694899562}
+  - {fileID: -5450259213162715431}
   EditorParameters: []
   MasterBanks:
-  - {fileID: -7679106129418551999}
+  - {fileID: 3582666750603075070}
   StringsBanks:
-  - {fileID: 4059917737434027316}
+  - {fileID: -8159624751059751045}
   cacheVersion: 131860
-  cacheTime: 639202611531912332
+  cacheTime: 639206253443237224
   SerializableEventsDict:
   - key: event:/greatevent/great goodness
     index: 0
+  - key: event:/greatevent/great goodness 2
+    index: 1
 --- !u!114 &107112948978132298
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2583,6 +2614,26 @@ MonoBehaviour:
   MinDistance: 1
   MaxDistance: 100
   Length: 0
+--- !u!114 &3582666750603075070
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c18180ecb35941f4682ae60107b85b7c, type: 3}
+  m_Name: bank:/Master.bank
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorBankRef
+  Path: ../../Users/zevan/Music/fmod/fried/Build/Desktop/Master.bank
+  Name: Master
+  StudioPath: bank:/Master
+  lastModified: 639206253443222173
+  FileSizes:
+  - Name: Desktop
+    Value: 630880
+  Exists: 1
 --- !u!114 &4009373593783236310
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2610,26 +2661,6 @@ MonoBehaviour:
   MinDistance: 1
   MaxDistance: 20
   Length: 1274
---- !u!114 &4059917737434027316
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c18180ecb35941f4682ae60107b85b7c, type: 3}
-  m_Name: bank:/Master.strings.bank
-  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorBankRef
-  Path: ../../Users/zevan/Music/fmod/try/Build/Desktop/Master.strings.bank
-  Name: Master.strings
-  StudioPath: bank:/Master.strings
-  lastModified: 639202611531912332
-  FileSizes:
-  - Name: Desktop
-    Value: 938
-  Exists: 1
 --- !u!114 &4073991955694491332
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2682,6 +2713,26 @@ MonoBehaviour:
   Type: 0
   IsGlobal: 0
   Labels: []
+  Exists: 1
+--- !u!114 &4223104377956527933
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c18180ecb35941f4682ae60107b85b7c, type: 3}
+  m_Name: bank:/bankler.bank
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorBankRef
+  Path: ../../Users/zevan/Music/fmod/fried/Build/Desktop/bankler.bank
+  Name: bankler
+  StudioPath: bank:/bankler
+  lastModified: 639206253442990417
+  FileSizes:
+  - Name: Desktop
+    Value: 630336
   Exists: 1
 --- !u!114 &4324515920237702922
 MonoBehaviour:
@@ -3192,26 +3243,6 @@ MonoBehaviour:
   MinDistance: 1
   MaxDistance: 20
   Length: 0
---- !u!114 &6856103797254334676
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c18180ecb35941f4682ae60107b85b7c, type: 3}
-  m_Name: bank:/bankler.bank
-  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorBankRef
-  Path: ../../Users/zevan/Music/fmod/try/Build/Desktop/bankler.bank
-  Name: bankler
-  StudioPath: bank:/bankler
-  lastModified: 639202611531629896
-  FileSizes:
-  - Name: Desktop
-    Value: 624608
-  Exists: 1
 --- !u!114 &6903421720258543930
 MonoBehaviour:
   m_ObjectHideFlags: 0

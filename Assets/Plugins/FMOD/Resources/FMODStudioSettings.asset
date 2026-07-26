@@ -380,8 +380,8 @@ MonoBehaviour:
   switchSettingsMigration: 1
   HasSourceProject: 1
   HasPlatforms: 1
-  sourceProjectPath: ../../Users/zevan/Music/fmod/try/try.fspro
-  sourceBankPath: ../../Users/zevan/Music/fmod/try/Build
+  sourceProjectPath: ../../Users/zevan/Music/fmod/fried/fried.fspro
+  sourceBankPath: ../../Users/zevan/Music/fmod/fried/Build
   sourceBankPathUnformatted: 
   BankRefreshCooldown: 1
   ShowBankRefreshWindow: 0
@@ -392,7 +392,7 @@ MonoBehaviour:
   ImportType: 0
   TargetAssetPath: FMODBanks
   TargetBankFolder: 
-  EventLinkage: 0
+  EventLinkage: 1
   SerializeGUIDsOnly: 0
   LoggingLevel: 2
   SpeakerModeSettings: []
