@@ -539,9 +539,9 @@ MonoBehaviour:
   sourceProjectPath: 
   sourceBankPath: Assets/Game/FMOD-Build
   sourceBankPathUnformatted: 
-  BankRefreshCooldown: 1
-  ShowBankRefreshWindow: 1
-  AutomaticEventLoading: 1
+  BankRefreshCooldown: 5
+  ShowBankRefreshWindow: 0
+  AutomaticEventLoading: 0
   BankLoadType: 0
   AutomaticSampleLoading: 0
   EncryptionKey: 
@@ -563,7 +563,8 @@ MonoBehaviour:
   - Master
   Banks:
   - bankler
-  BanksToLoad: []
+  BanksToLoad:
+  - Master
   LiveUpdatePort: 9264
   EnableMemoryTracking: 0
   AndroidUseOBB: 0
