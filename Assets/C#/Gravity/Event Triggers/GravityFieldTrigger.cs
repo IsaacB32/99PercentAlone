@@ -8,8 +8,15 @@ using UnityEngine;
 public class GravityFieldTrigger : GravityEventTrigger
 {
     [SerializeField] private float _radius = 20f;
-    [SerializeField] private GravitySource[] _sources;
+    protected override GravityBodyType _bodyType => GravityBodyType.Source;
     
+    private GravitySource[] _sources;
+
+    private void Awake()
+    {
+        _sources = GetComponentsInChildren<GravitySource>();
+    }
+
     public override void OnGravityBodyEnter(GravityBody body)
     {
         body.UpdateGravitySources(_sources); 
@@ -37,17 +44,6 @@ public class GravityFieldTrigger : GravityEventTrigger
 
         _radius = largestDistance;
         OnValidate();
-    }
-
-    /// <summary>
-    /// Assign all children GravitySource to _sources 
-    /// </summary>
-    [Button("Assign Children")]
-    private void AssignChildrenToSource()
-    {
-        GravitySource[] childrenSources = transform.GetComponentsInChildren<GravitySource>();
-        _sources = childrenSources;
-        FindFarthestSource();
     }
     
     private void OnDrawGizmosSelected()

@@ -6,36 +6,40 @@ using NaughtyAttributes;
 /// </summary>
 public abstract class GravityEventTrigger : MonoBehaviour
 {
-   private void OnTriggerEnter(Collider other)
-   {
-      if (other.TryGetComponent(out GravityBody body))
-      {
-         OnGravityBodyEnter(body);
-      }
-   }
+    protected abstract GravityBodyType _bodyType { get; }
 
-   private void OnTriggerExit(Collider other)
-   {
-      if (other.TryGetComponent(out GravityBody body))
-      {
-         OnGravityBodyExit(body);
-      }
-   }
-   
-   /// <summary>
-   /// GravityBody enters the trigger
-   /// </summary>
-   public abstract void OnGravityBodyEnter(GravityBody body);
-   
-   /// <summary>
-   /// GravityBody exits the trigger
-   /// </summary>
-   protected abstract void OnGravityBodyExit(GravityBody body);
-   
-   protected virtual void OnValidate()
-   {
-      gameObject.layer = Layers.GravityTrigger;
-   }
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.TryGetComponent(out GravityBody body))
+        {
+            OnGravityBodyEnter(body);
+            body.GravityType = _bodyType;
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.TryGetComponent(out GravityBody body))
+        {
+            OnGravityBodyExit(body);
+            body.GravityType = GravityBodyType.Reassign;
+        }
+    }
+
+    /// <summary>
+    /// GravityBody enters the trigger
+    /// </summary>
+    public abstract void OnGravityBodyEnter(GravityBody body);
+
+    /// <summary>
+    /// GravityBody exits the trigger
+    /// </summary>
+    protected abstract void OnGravityBodyExit(GravityBody body);
+
+    protected virtual void OnValidate()
+    {
+        gameObject.layer = Layers.GravityTrigger;
+    }
 }
 
 /// <summary>
@@ -47,18 +51,18 @@ public abstract class GravityDirectionalTrigger : GravityEventTrigger
     [SerializeField] private Vector3 _gravityDirection;
     [SerializeField] protected float _gravityEffectorThickness = 1f;
 
+    protected override GravityBodyType _bodyType => GravityBodyType.Directional;
+
     //===== Collision =====
 
     public override void OnGravityBodyEnter(GravityBody body)
     {
         body.DirectionalGravity = _gravityDirection.normalized;
-        body.GravityType = GravityBodyType.Directional;
     }
 
     protected override void OnGravityBodyExit(GravityBody body)
     {
         body.DirectionalGravity = Vector3.zero;
-        body.GravityType = GravityBodyType.Reassign;
     }
 
     //===== Visual =====

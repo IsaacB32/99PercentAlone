@@ -1,5 +1,5 @@
-using UnityEngine;
 using NaughtyAttributes;
+using UnityEngine;
 
 /// <summary>
 /// Source of gravity
@@ -35,11 +35,15 @@ public abstract class GravitySource : MonoBehaviour
     public abstract float DistanceToSurface(Vector3 objectPosition);
     
     //===== Visual =====
-    
+
+    private void OnValidate()
+    {
+        ValidateSize();
+    }
+
     /// <summary>
     /// Ensure the size of the transform matches the size of the variables 
     /// </summary>
-    [Button("Set Size")]
     protected abstract void ValidateSize();
     
     /// <summary>

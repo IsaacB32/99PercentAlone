@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class GravityPlane : GravitySource
+public class GravityCube : GravitySource
 {
     [SerializeField] private float _width = 1f;
     [SerializeField] private float _thickness = 1f;

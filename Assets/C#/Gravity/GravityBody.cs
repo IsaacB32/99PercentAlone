@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public enum GravityBodyType
@@ -33,7 +34,7 @@ public class GravityBody : MonoBehaviour
     private GravitySource[] _sources = Array.Empty<GravitySource>();
     public Vector3 DirectionalGravity { get; set; } = Vector3.zero;
     
-    private GravityBodyType _gravityType = GravityBodyType.Source; 
+    private GravityBodyType _gravityType = GravityBodyType.Reassign; 
     public GravityBodyType GravityType
     {
         get => _gravityType;
@@ -66,7 +67,6 @@ public class GravityBody : MonoBehaviour
         _sources = _staticGravitySources;
         
         GravityType = _gravityType;
-        FindEffectors();
     } 
     
     //===== Gravity Applications =====
