@@ -1,4 +1,4 @@
-using Isaac.Attributes;
+using NaughtyAttributes;
 using UnityEngine;
 
 /// <summary>
@@ -23,7 +23,7 @@ public class GravityFieldTrigger : GravityEventTrigger
     /// <summary>
     /// Update the _radius to the farthest GravitySource
     /// </summary>
-    [FunctionButton("Update Radius")]
+    [Button("Update Radius")]
     private void FindFarthestSource()
     {
         float largestDistance = 0f;
@@ -42,7 +42,7 @@ public class GravityFieldTrigger : GravityEventTrigger
     /// <summary>
     /// Assign all children GravitySource to _sources 
     /// </summary>
-    [FunctionButton("Assign Children")]
+    [Button("Assign Children")]
     private void AssignChildrenToSource()
     {
         GravitySource[] childrenSources = transform.GetComponentsInChildren<GravitySource>();

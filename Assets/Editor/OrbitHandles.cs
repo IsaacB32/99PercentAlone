@@ -1,10 +1,9 @@
-using System;
-using Isaac.Attributes.Editor;
+using NaughtyAttributes.Editor;
 using UnityEditor;
 using UnityEngine;
 
 [CustomEditor(typeof(GravityOrbiter))]
-public class OrbitHandles : MonoBehaviourFunctionButtonEditor
+public class OrbitHandles : NaughtyInspector
 {
     private void OnSceneGUI()
     {

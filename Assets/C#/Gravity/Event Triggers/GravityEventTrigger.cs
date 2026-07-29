@@ -1,5 +1,5 @@
-using Isaac.Attributes;
 using UnityEngine;
+using NaughtyAttributes;
 
 /// <summary>
 /// Process events when a GravityBody enters / exits
@@ -63,7 +63,7 @@ public abstract class GravityDirectionalTrigger : GravityEventTrigger
 
     //===== Visual =====
     
-    [FunctionButton("Reset Gravity Direction")]
+    [Button("Reset Gravity Direction")]
     protected void Reset()
     {
         _gravityDirection = transform.up;

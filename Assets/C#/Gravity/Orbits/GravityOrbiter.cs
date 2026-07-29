@@ -1,5 +1,5 @@
 using System;
-using Isaac.Attributes;
+using NaughtyAttributes;
 using Isaac.Extensions;
 using UnityEngine;
 
@@ -21,12 +21,12 @@ public class GravityOrbiter : MonoBehaviour
     
     [Header("Orbit Settings")]
     [SerializeField] private bool _adjustOrbitSettings = true;
-    [ReadOnly(nameof(_adjustOrbitSettings))] [SerializeField] private Vector3 _positionOffset;
-    [ReadOnly(nameof(_adjustOrbitSettings)), Range(0, 2*Mathf.PI)] [SerializeField] private float _startingOrbitPosition = 0f;
-    [ReadOnly(nameof(_adjustOrbitSettings))] [SerializeField] private float _semiMajorAxis = 25f;
-    [ReadOnly(nameof(_adjustOrbitSettings)), Range(0.1f, 0.95f)] [SerializeField] private float _eccentricity = 0.5f;
-    [ReadOnly(nameof(_adjustOrbitSettings)), Min(0.5f)] [SerializeField] private float _orbitalPeriod = 5f;
-    [ReadOnly(nameof(_adjustOrbitSettings))] [SerializeField] private bool _simulate = false;
+    [ShowIf(nameof(_adjustOrbitSettings))] [SerializeField] private Vector3 _positionOffset;
+    [ShowIf(nameof(_adjustOrbitSettings)), Range(0, 2*Mathf.PI)] [SerializeField] private float _startingOrbitPosition = 0f;
+    [ShowIf(nameof(_adjustOrbitSettings))] [SerializeField] private float _semiMajorAxis = 25f;
+    [ShowIf(nameof(_adjustOrbitSettings)), Range(0.1f, 0.95f)] [SerializeField] private float _eccentricity = 0.5f;
+    [ShowIf(nameof(_adjustOrbitSettings)), Min(0.5f)] [SerializeField] private float _orbitalPeriod = 5f;
+    [ShowIf(nameof(_adjustOrbitSettings))] [SerializeField] private bool _simulate = false;
 
     //===== Orbit Values =====
     private float _semiMinorAxis;
@@ -136,13 +136,13 @@ public class GravityOrbiter : MonoBehaviour
     /// <summary>
     /// Align the object to its first orbital positon
     /// </summary>
-    [FunctionButton]
+    [Button]
     private void AlignToOrbit()
     {
         transform.position = CalculateParameterizedOrbitAtTime(_startingOrbitPosition);
     }
 
-    [FunctionButton]
+    [Button]
     private void ResetOrbitRotation()
     {
         Rotation = Quaternion.identity;

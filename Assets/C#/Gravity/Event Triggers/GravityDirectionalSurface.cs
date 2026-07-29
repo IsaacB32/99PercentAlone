@@ -1,4 +1,4 @@
-using Isaac.Attributes;
+using NaughtyAttributes;
 using UnityEngine;
 
 /// <summary>
@@ -17,7 +17,7 @@ public class GravityDirectionalSurface : GravityDirectionalTrigger
     /// <summary>
     /// Move this script and BoxCollider to a new child object if ground collisions are required on the parent
     /// </summary>
-    [FunctionButton]
+    [Button]
     private void MigrateToChild()
     {
         GameObject child = new GameObject("Directional Trigger")

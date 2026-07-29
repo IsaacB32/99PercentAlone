@@ -1,5 +1,5 @@
 using System;
-using Isaac.Attributes;
+using NaughtyAttributes;
 using UnityEngine;
 
 /// <summary>
@@ -9,7 +9,7 @@ public class Interactor : MonoBehaviour
 {
     [Tooltip("Camera to process interactions from, leave empty to use main camera")]
     [SerializeField] private bool _overrideMainCamera;
-    [SerializeField, ReadOnly(nameof(_overrideMainCamera), true)] private Camera _camera = null;
+    [SerializeField, ShowIf(nameof(_overrideMainCamera))] private Camera _camera = null;
 
     [SerializeField] private LayerMask _interactionLayerMask = Layers.Interaction;
     [SerializeField] private float _interactionDistance = 5f;

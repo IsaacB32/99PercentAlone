@@ -1,5 +1,5 @@
 using UnityEngine;
-using Isaac.Attributes;
+using NaughtyAttributes;
 
 /// <summary>
 /// Source of gravity
@@ -39,7 +39,7 @@ public abstract class GravitySource : MonoBehaviour
     /// <summary>
     /// Ensure the size of the transform matches the size of the variables 
     /// </summary>
-    [FunctionButton("Set Size")]
+    [Button("Set Size")]
     protected abstract void ValidateSize();
     
     /// <summary>

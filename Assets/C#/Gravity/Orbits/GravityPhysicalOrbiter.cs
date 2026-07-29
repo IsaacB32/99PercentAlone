@@ -1,5 +1,5 @@
 using System;
-using Isaac.Attributes;
+using NaughtyAttributes;
 using UnityEngine;
 
 /// <summary>
@@ -20,8 +20,8 @@ public class GravityPhysicalOrbiter : MonoBehaviour
 
     [Header("Visualize Orbit")] 
     [SerializeField] private bool _drawOrbit = true;
-    [ReadOnly(nameof(_drawOrbit))] [SerializeField] private int _numSteps = 1000;
-    [ReadOnly(nameof(_drawOrbit)), Min(0.1f)] [SerializeField] private float _orbitDrawTimeStep = 0.1f;
+    [ShowIf(nameof(_drawOrbit))] [SerializeField] private int _numSteps = 1000;
+    [ShowIf(nameof(_drawOrbit)), Min(0.1f)] [SerializeField] private float _orbitDrawTimeStep = 0.1f;
 
     //===== References =====
     private Rigidbody _rb;
