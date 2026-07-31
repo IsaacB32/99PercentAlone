@@ -6,7 +6,8 @@ public enum PlayerInputState
 {
     Menu,
     Gravity,
-    Weightless
+    Weightless,
+    Ship
 } 
 
 /// <summary>
