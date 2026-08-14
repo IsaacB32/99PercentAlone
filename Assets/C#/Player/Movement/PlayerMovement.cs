@@ -1,8 +1,11 @@
 using System;
 using UnityEngine;
 
-public class PlayerMovementController : GravityBody
+public class PlayerMovement : GravityBody
 {
+    [Header("Controller")]
+    [SerializeField] private PlayerInputController _playerInputController;
+    
     [Space]
     [SerializeField] private Transform _playerBody;
     private Transform _playerCamera;
@@ -24,7 +27,7 @@ public class PlayerMovementController : GravityBody
     [SerializeField] private float _stickToGroundForce = 8f;
 
     //===== Gravity Movement Variables =====
-    private Vector3 _movementInput;
+    private Vector3 _movementForce;
     private Vector3 _smoothRef;
     
     //===== Weightless Movement Variables =====
@@ -34,53 +37,52 @@ public class PlayerMovementController : GravityBody
     //===== Movement States =====
     private Action CurrentMovement;
     private bool _isThrusting = false;
+
+    #region Subscribe
     
+    private void OnEnable()
+    {
+        _playerInputController.OnSwitchInputState += OnSwitchInputState;
+        _playerInputController.OnJump += OnJump;
+    }
+    
+    private void OnDisable()
+    {
+        _playerInputController.OnSwitchInputState -= OnSwitchInputState;
+        _playerInputController.OnJump -= OnJump;
+    }
+    
+    #endregion
+
     protected new void Awake()
     {
         base.Awake();
         _playerCamera = _playerBody.GetComponentInChildren<Camera>().transform;
         CurrentMovement = GravityMovement;
     }
-
-    #region Subscribe
-
-        private void OnEnable()
-        {
-            InputCatcher.OnJumpPressed += OnJumpPressed;
-            InputCatcher.OnJumpReleased += OnJumpReleased;
-            InputCatcher.OnSwitchInputState += OnSwitchInputState;
-        }
     
-        private void OnDisable()
-        {
-            InputCatcher.OnJumpPressed -= OnJumpPressed;
-            InputCatcher.OnJumpReleased -= OnJumpReleased;
-            InputCatcher.OnSwitchInputState -= OnSwitchInputState;
-        }
-
-    #endregion
-
     #region Event Methods
-
-    private void OnJumpPressed()
+    
+    private void OnJump(bool isPressed)
     {
-        _isThrusting = true;
-        if (!InputCatcher.IsGrounded) return;
-        _rb.AddForce(transform.up * _jumpForce, ForceMode.VelocityChange);
+        if (isPressed)
+        {
+            _isThrusting = true;
+            if (!_playerInputController.IsGrounded) return;
+            _rb.AddForce(transform.up * _jumpForce, ForceMode.VelocityChange);
+        }
+        else
+        {
+            _isThrusting = false;
+        }
     }
-
-    private void OnJumpReleased()
-    {
-        _isThrusting = false;
-    }
-
-    private void OnSwitchInputState(PlayerInputState newState)
+    
+    private void OnSwitchInputState(PlayerInputController.MovementType newState)
     {
         CurrentMovement = newState switch
         {
-            PlayerInputState.Gravity => GravityMovement,
-            PlayerInputState.Weightless => WeightlessMovement,
-            PlayerInputState.Menu => MenuMovement,
+            PlayerInputController.MovementType.Gravity => GravityMovement,
+            PlayerInputController.MovementType.Weightless => WeightlessMovement,
             _ => throw new ArgumentOutOfRangeException(nameof(newState), newState, null)
         };
     }
@@ -97,17 +99,17 @@ public class PlayerMovementController : GravityBody
     private void GravityMovement()
     {
         //stick to ground force
-        if (InputCatcher.IsGrounded && !_isThrusting) _rb.AddForce(-transform.up * _stickToGroundForce, ForceMode.VelocityChange); 
+        if (_playerInputController.IsGrounded && !_isThrusting) _rb.AddForce(-transform.up * _stickToGroundForce, ForceMode.VelocityChange); 
         
-        float currentSpeed = InputCatcher.IsRunning ? _runSpeed : _walkSpeed;
-        Vector3 targetVelocity = _playerBody.TransformDirection(InputCatcher.MovementVector.normalized) * currentSpeed;
-        float smoothTime = (InputCatcher.IsGrounded) ? _groundSmoothTime : _airSmoothTime;
-        _movementInput = Vector3.SmoothDamp(_movementInput, targetVelocity, ref _smoothRef, smoothTime);
+        float currentSpeed = _playerInputController.IsRunning ? _runSpeed : _walkSpeed;
+        Vector3 targetVelocity = _playerBody.TransformDirection(_playerInputController.MovementInput.normalized) * currentSpeed;
+        float smoothTime = (_playerInputController.IsGrounded) ? _groundSmoothTime : _airSmoothTime;
+        _movementForce = Vector3.SmoothDamp(_movementForce, targetVelocity, ref _smoothRef, smoothTime);
     }
     
     private void WeightlessMovement()
     {
-        Vector3 inputDirection = InputCatcher.MovementVector.normalized;
+        Vector3 inputDirection = _playerInputController.MovementInput.normalized;
         
         _weightlessRotationInput.x = Mathf.SmoothDamp(_weightlessRotationInput.x, inputDirection.x, ref _weightlessSmoothRef.x, _weightlessSmoothingAmount);
         _weightlessRotationInput.y = Mathf.SmoothDamp(_weightlessRotationInput.y, inputDirection.z, ref _weightlessSmoothRef.y, _weightlessSmoothingAmount);
@@ -123,14 +125,9 @@ public class PlayerMovementController : GravityBody
 
         if (_isThrusting)
         {
-            _movementInput += _playerCamera.forward * _thrustAcceleration * Time.deltaTime;
-            _movementInput = Vector3.ClampMagnitude(_movementInput, _maxThrust);
+            _movementForce += _playerCamera.forward * _thrustAcceleration * Time.deltaTime;
+            _movementForce = Vector3.ClampMagnitude(_movementForce, _maxThrust);
         }
-    }
-
-    private void MenuMovement()
-    {
-        throw new NotImplementedException();
     }
 
     //===== Gravity Applications =====
@@ -138,7 +135,7 @@ public class PlayerMovementController : GravityBody
     protected new void FixedUpdate()
     {
         base.FixedUpdate();
-        _rb.MovePosition(_rb.position + _movementInput * Time.fixedDeltaTime);
+        _rb.MovePosition(_rb.position + _movementForce * Time.fixedDeltaTime);
     }
     
     protected override void ApplySourceGravity()
@@ -147,18 +144,18 @@ public class PlayerMovementController : GravityBody
         
         if (strongestPull.sqrMagnitude < _weakestGravityStrength || !distanceToSurface.HasValue)
         {
-            InputCatcher.CurrentInputState = PlayerInputState.Weightless;
+            _playerInputController.CurrentMovementType = PlayerInputController.MovementType.Weightless;
         }
         else
         {
-            InputCatcher.CurrentInputState = PlayerInputState.Gravity;
+            _playerInputController.CurrentMovementType = PlayerInputController.MovementType.Gravity;
             RotateObjectToSourceUp(strongestPull, distanceToSurface);
         }
     }
 
     protected override void ApplyDirectionalGravity()
     {
-        InputCatcher.CurrentInputState = PlayerInputState.Gravity;
+        _playerInputController.CurrentMovementType = PlayerInputController.MovementType.Gravity;
         base.ApplyDirectionalGravity();
     }
 }

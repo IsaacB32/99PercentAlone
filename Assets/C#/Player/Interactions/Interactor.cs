@@ -7,6 +7,9 @@ using UnityEngine;
 /// </summary>
 public class Interactor : MonoBehaviour
 {
+    [Header("Controller")]
+    [SerializeField] private PlayerInputController _playerInputController;
+    
     [Tooltip("Camera to process interactions from, leave empty to use main camera")]
     [SerializeField] private bool _overrideMainCamera;
     [SerializeField, ShowIf(nameof(_overrideMainCamera))] private Camera _camera = null;
@@ -26,13 +29,13 @@ public class Interactor : MonoBehaviour
     
     private void LateUpdate()
     {
-        Vector3 worldOrigin = _camera.ScreenToWorldPoint(InputCatcher.MousePosition);
+        Vector3 worldOrigin = _camera.ScreenToWorldPoint(_playerInputController.MousePosition);
         if (Physics.Raycast(worldOrigin, transform.forward, out RaycastHit hit, _interactionDistance, _interactionLayerMask))
         {
             Interactable interactable = hit.transform.GetComponent<Interactable>();
             Interactable.RefreshHovering(interactable);
             
-            if (InputCatcher.InteractPressedThisFrame) interactable.OnSelect();
+            if (_playerInputController.InteractPressedThisFrame) interactable.OnSelect();
         } 
         else Interactable.RefreshHovering(null);
     }
@@ -42,7 +45,7 @@ public class Interactor : MonoBehaviour
     private void OnDrawGizmos()
     {
         if (!_drawLook || !Application.isPlaying) return;
-        Vector3 worldOrigin = _camera.ScreenToWorldPoint(InputCatcher.MousePosition);
+        Vector3 worldOrigin = _camera.ScreenToWorldPoint(_playerInputController.MousePosition);
         Gizmos.DrawRay(worldOrigin, transform.forward * _interactionDistance);
     }
     

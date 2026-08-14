@@ -2,8 +2,11 @@ using System;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class PlayerCameraController : MonoBehaviour
+public class PlayerCamera : MonoBehaviour
 {
+    [Header("Controller")]
+    [SerializeField] private PlayerInputController _playerInputController;
+    
     [Header("Camera Constraints")] 
     [SerializeField] private float mouseSensitivity = 1f;
     [SerializeField] private float _minVerticalAngle = -90f;
@@ -79,6 +82,19 @@ public class PlayerCameraController : MonoBehaviour
     private float _currentCollisionDistance;
     private float _currentCollisionSmoothRef; //useless SmoothDamp value
 
+    #region Subscribe
+
+    private void OnEnable()
+    {
+        _playerInputController.OnSwitchInputState += OnSwitchInputState;
+    }
+
+    private void OnDisable()
+    {
+        _playerInputController.OnSwitchInputState -= OnSwitchInputState;
+    }
+
+    #endregion
 
     private void Awake()
     {
@@ -100,25 +116,20 @@ public class PlayerCameraController : MonoBehaviour
         _currentFOV = _normalFOV;
         _targetFOV = _normalFOV;
     }
-
-    #region Subscribe
-
-    private void OnEnable()
-    {
-        InputCatcher.OnLook += OnLook;
-        InputCatcher.OnSwitchInputState += OnSwitchInputState;
-
-    }
-
-    private void OnDisable()
-    {
-        InputCatcher.OnLook -= OnLook;
-        InputCatcher.OnSwitchInputState -= OnSwitchInputState;
-    }
-
-    #endregion
     
     #region Event Methods
+    
+    private void OnSwitchInputState(PlayerInputController.MovementType newState)
+    {
+        _cameraSmoothingTime = newState switch
+        {
+            PlayerInputController.MovementType.Gravity => _gravitySmoothTime,
+            PlayerInputController.MovementType.Weightless => _spaceSmoothTime,
+            _ => throw new ArgumentOutOfRangeException(nameof(newState), newState, null)
+        };
+    }
+    
+    #endregion
     
     private void OnLook(Vector2 lookVector)
     {
@@ -127,20 +138,6 @@ public class PlayerCameraController : MonoBehaviour
 
         CameraMovement(lookVector);
     }
-    
-    
-    private void OnSwitchInputState(PlayerInputState newState)
-    {
-        _cameraSmoothingTime = newState switch
-        {
-            PlayerInputState.Gravity => _gravitySmoothTime,
-            PlayerInputState.Weightless => _spaceSmoothTime,
-            PlayerInputState.Menu => throw new NotImplementedException(),
-            _ => throw new ArgumentOutOfRangeException(nameof(newState), newState, null)
-        };
-    }
-    
-    #endregion
     
     private void CameraMovement(Vector2 lookVector)
     {
@@ -156,6 +153,8 @@ public class PlayerCameraController : MonoBehaviour
     
     void Update()
     {
+        OnLook(_playerInputController.MousePosition);
+        
         HandleZoom();
         HandleCameraShake();
         HandleWallCollisions();
@@ -165,10 +164,10 @@ public class PlayerCameraController : MonoBehaviour
 
         private void HandleZoom()
         {
-            bool isPlayerRunning = InputCatcher.IsRunning;
+            bool isPlayerRunning = _playerInputController.IsRunning;
     
-            if (InputCatcher.IsAiming) _targetFOV = _zoomedFOV;
-            else if (InputCatcher.CurrentInputState == PlayerInputState.Gravity && isPlayerRunning) _targetFOV = _runningFOV;
+            if (_playerInputController.IsAiming) _targetFOV = _zoomedFOV;
+            else if (_playerInputController.CurrentMovementType == PlayerInputController.MovementType.Gravity && isPlayerRunning) _targetFOV = _runningFOV;
             else  _targetFOV = _normalFOV;
     
             float zoomT = 1f - Mathf.Exp(-_zoomSpeed * Time.deltaTime);
@@ -185,9 +184,9 @@ public class PlayerCameraController : MonoBehaviour
                 return;
             }
     
-            bool isGrounded = InputCatcher.IsGrounded;
-            bool isMoving = InputCatcher.IsMoving;
-            bool isRunning = InputCatcher.IsRunning;
+            bool isGrounded = _playerInputController.IsGrounded;
+            bool isMoving = _playerInputController.IsMoving;
+            bool isRunning = _playerInputController.IsRunning;
     
             // Detect landing
             if (isGrounded && !_wasGrounded)
@@ -205,7 +204,7 @@ public class PlayerCameraController : MonoBehaviour
                 targetFreq = isRunning ? _runBobFrequency : _walkBobFrequency;
             }
     
-            if (InputCatcher.IsAiming)
+            if (_playerInputController.IsAiming)
             {
                 targetAmount *= _aimShakeMultiplier;
             }

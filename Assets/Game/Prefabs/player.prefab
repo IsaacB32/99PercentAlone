@@ -99,6 +99,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5e8ffb1310baf44ea32ca749817aef5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _playerInputController: {fileID: 8138966229873891958}
   mouseSensitivity: 0.85
   _minVerticalAngle: -80
   _maxVerticalAngle: 95
@@ -138,6 +139,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 21968cec578069e32b14a96e344ae9ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Interactor
+  _playerInputController: {fileID: 8138966229873891958}
   _overrideMainCamera: 0
   _camera: {fileID: 0}
   _interactionLayerMask:
@@ -453,10 +455,6 @@ MonoBehaviour:
     m_ActionId: 852140f2-7766-474d-8707-702459ba45f3
     m_ActionName: 'Player/Interact[/Keyboard/e,/Gamepad/buttonNorth]'
   - m_PersistentCalls:
-      m_Calls: []
-    m_ActionId: 27c5f898-bc57-4ee1-8800-db469aca5fe3
-    m_ActionName: 'Player/Crouch[/Gamepad/buttonEast,/Keyboard/c]'
-  - m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 8138966229873891958}
         m_TargetAssemblyTypeName: PlayerInputCatcher, Assembly-CSharp
@@ -472,14 +470,6 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: f1ba0d36-48eb-4cd5-b651-1c94a6531f70
     m_ActionName: 'Player/Jump[/Keyboard/space,/Gamepad/buttonSouth]'
-  - m_PersistentCalls:
-      m_Calls: []
-    m_ActionId: 2776c80d-3c14-4091-8c56-d04ced07a2b0
-    m_ActionName: 'Player/Previous[/Keyboard/1,/Gamepad/dpad/left]'
-  - m_PersistentCalls:
-      m_Calls: []
-    m_ActionId: b7230bb6-fc9b-4f52-8b25-f5e19cb2c2ba
-    m_ActionName: 'Player/Next[/Keyboard/2,/Gamepad/dpad/right]'
   - m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 8138966229873891958}
@@ -538,8 +528,8 @@ MonoBehaviour:
     m_ActionName: UI/TrackedDeviceOrientation
   - m_PersistentCalls:
       m_Calls: []
-    m_ActionId: dc88a0b2-3afe-4a8a-b905-68fc2d6f2b54
-    m_ActionName: 'Player/escape[/Keyboard/escape]'
+    m_ActionId: fe43a3ca-97f6-49be-b7ea-767b27ffb544
+    m_ActionName: Ship/New action
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Player
@@ -584,6 +574,7 @@ MonoBehaviour:
   _gravitySmoothingMax: 3
   _directionalAcceleration: -9.8
   _staticGravitySources: []
+  _playerInputController: {fileID: 8138966229873891958}
   _playerBody: {fileID: 2079092815341970859}
   _walkSpeed: 3
   _runSpeed: 6
