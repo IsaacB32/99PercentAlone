@@ -27,7 +27,7 @@ public class PlayerMovement : GravityBody
     [SerializeField] private float _stickToGroundForce = 8f;
 
     //===== Gravity Movement Variables =====
-    private Vector3 _movementForce;
+    private Vector3 _movementVector;
     private Vector3 _smoothRef;
     
     //===== Weightless Movement Variables =====
@@ -93,6 +93,8 @@ public class PlayerMovement : GravityBody
     
     private void Update()
     {
+        if (_playerInputController.IsUpdateLocked) return;
+        
         CurrentMovement();
     }
     
@@ -104,7 +106,7 @@ public class PlayerMovement : GravityBody
         float currentSpeed = _playerInputController.IsRunning ? _runSpeed : _walkSpeed;
         Vector3 targetVelocity = _playerBody.TransformDirection(_playerInputController.MovementInput.normalized) * currentSpeed;
         float smoothTime = (_playerInputController.IsGrounded) ? _groundSmoothTime : _airSmoothTime;
-        _movementForce = Vector3.SmoothDamp(_movementForce, targetVelocity, ref _smoothRef, smoothTime);
+        _movementVector = Vector3.SmoothDamp(_movementVector, targetVelocity, ref _smoothRef, smoothTime);
     }
     
     private void WeightlessMovement()
@@ -125,8 +127,8 @@ public class PlayerMovement : GravityBody
 
         if (_isThrusting)
         {
-            _movementForce += _playerCamera.forward * _thrustAcceleration * Time.deltaTime;
-            _movementForce = Vector3.ClampMagnitude(_movementForce, _maxThrust);
+            _movementVector += _playerCamera.forward * _thrustAcceleration * Time.deltaTime;
+            _movementVector = Vector3.ClampMagnitude(_movementVector, _maxThrust);
         }
     }
 
@@ -134,8 +136,10 @@ public class PlayerMovement : GravityBody
     
     protected new void FixedUpdate()
     {
+        if (_playerInputController.IsUpdateLocked) return;
+        
         base.FixedUpdate();
-        _rb.MovePosition(_rb.position + _movementForce * Time.fixedDeltaTime);
+        transform.position += _movementVector * Time.fixedDeltaTime;
     }
     
     protected override void ApplySourceGravity()
@@ -158,4 +162,16 @@ public class PlayerMovement : GravityBody
         _playerInputController.CurrentMovementType = PlayerInputController.MovementType.Gravity;
         base.ApplyDirectionalGravity();
     }
+    
+    //===== External Callers =====
+    //methods that are called by other scripts to modify input/position
+
+    public PlayerMovement ZeroOutMovementVector()
+    {
+        _movementVector = Vector3.zero;
+        _rb.angularVelocity = _movementVector;
+        _rb.linearVelocity = _movementVector;
+        return this;
+    } 
+
 }

@@ -6,11 +6,17 @@ using UnityEngine;
 public class SampleTweener : MonoBehaviour
 {
     [SerializeField] private Transform _target;
+    [SerializeField] private TweenSettings_Visibility _settings;
+
     private IEnumerator Start()
     {
-        Tween t = transform.IT_Move(_target, 5f);
-        t.SetEase(EasingType.InOutBounce);
+        VisibilityTween t = transform.IT_Move(_target, _settings);
         yield return new WaitForSeconds(1f);
-        // t.Kill();
+        t.SetVisible(true);
+        // yield return new WaitForSeconds(2f);
+        // t.SetVisible(true);
+        
+
+        yield break;
     }
 }

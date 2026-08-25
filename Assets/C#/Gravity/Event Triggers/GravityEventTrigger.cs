@@ -64,6 +64,18 @@ public abstract class GravityDirectionalTrigger : GravityEventTrigger
     {
         body.DirectionalGravity = Vector3.zero;
     }
+    
+    //===== Update Direction =====
+
+    public void SetNewGravityDirection(Vector3 direction)
+    {
+        _gravityDirection = direction;
+    }
+
+    public void SetGravityToUp()
+    {
+        _gravityDirection = transform.up;
+    }
 
     //===== Visual =====
     

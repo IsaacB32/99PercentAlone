@@ -9,9 +9,10 @@ public class Interactor : MonoBehaviour
 {
     [Header("Controller")]
     [SerializeField] private PlayerInputController _playerInputController;
+    [Space]
     
-    [Tooltip("Camera to process interactions from, leave empty to use main camera")]
     [SerializeField] private bool _overrideMainCamera;
+    [Tooltip("Camera to process interactions from, leave empty to use main camera")]
     [SerializeField, ShowIf(nameof(_overrideMainCamera))] private Camera _camera = null;
 
     [SerializeField] private LayerMask _interactionLayerMask = Layers.Interaction;
@@ -35,7 +36,7 @@ public class Interactor : MonoBehaviour
             Interactable interactable = hit.transform.GetComponent<Interactable>();
             Interactable.RefreshHovering(interactable);
             
-            if (_playerInputController.InteractPressedThisFrame) interactable.OnSelect();
+            if (_playerInputController.InteractPressedThisFrame) interactable.Select();
         } 
         else Interactable.RefreshHovering(null);
     }

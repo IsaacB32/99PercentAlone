@@ -43,6 +43,24 @@ public static class MathUtils
         return objectTransform.position + u * objectTransform.right + v * objectTransform.forward;
     }
 
+    /// <summary>
+    /// Remap a value from one range to another
+    /// </summary>
+    public static float Remap(float value, float inMin, float inMax, float outMin, float outMax)
+    {
+        float t = Mathf.InverseLerp(inMin, inMax, value);
+        return Mathf.Lerp(outMin, outMax, t);
+    }
+    
+    /// <summary>
+    /// Remap a float from one range to another
+    /// </summary>
+    public static float Remap(float value, Vector2 inTo, Vector2 outTo)
+    {
+        float t = Mathf.InverseLerp(inTo.x, inTo.y, value);
+        return Mathf.Lerp(outTo.x, outTo.y, t);
+    }
+
     #region Distance
 
         /// <summary>

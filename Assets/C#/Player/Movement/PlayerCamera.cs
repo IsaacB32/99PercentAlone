@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using Random = UnityEngine.Random;
+using ITween;
 
 public class PlayerCamera : MonoBehaviour
 {
@@ -136,11 +137,6 @@ public class PlayerCamera : MonoBehaviour
         _cameraRotation.x += lookVector.x * mouseSensitivity;
         _cameraRotation.y -= lookVector.y * mouseSensitivity;
 
-        CameraMovement(lookVector);
-    }
-    
-    private void CameraMovement(Vector2 lookVector)
-    {
         _cameraRotation.y = Mathf.Clamp(_cameraRotation.y - lookVector.y * mouseSensitivity, _minVerticalAngle, _maxVerticalAngle);
         _cameraSmoothing.y = Mathf.SmoothDampAngle(_cameraSmoothing.y, _cameraRotation.y, ref _smoothingRef.y, _cameraSmoothingTime);
         
@@ -149,10 +145,12 @@ public class PlayerCamera : MonoBehaviour
         
         transform.localEulerAngles = Vector3.right * _cameraSmoothing.y;
         _playerBody.Rotate(Vector3.up * Mathf.DeltaAngle(smoothXOld, _cameraSmoothing.x), Space.Self);
-    } 
+    }
     
     void Update()
     {
+        if (_playerInputController.IsUpdateLocked) return;
+        
         OnLook(_playerInputController.MousePosition);
         
         HandleZoom();
@@ -164,10 +162,11 @@ public class PlayerCamera : MonoBehaviour
 
         private void HandleZoom()
         {
-            bool isPlayerRunning = _playerInputController.IsRunning;
-    
             if (_playerInputController.IsAiming) _targetFOV = _zoomedFOV;
-            else if (_playerInputController.CurrentMovementType == PlayerInputController.MovementType.Gravity && isPlayerRunning) _targetFOV = _runningFOV;
+            else if (_playerInputController.CurrentMovementType == PlayerInputController.MovementType.Gravity && _playerInputController.IsRunning)
+            {
+                if (_playerInputController.IsMoving) _targetFOV = _runningFOV;
+            }
             else  _targetFOV = _normalFOV;
     
             float zoomT = 1f - Mathf.Exp(-_zoomSpeed * Time.deltaTime);
@@ -281,5 +280,49 @@ public class PlayerCamera : MonoBehaviour
         }
 
     #endregion
+    
+    //===== External Callers =====
+    //methods that are called by other scripts to modify input/position
+    
+    /// <summary>
+    /// Set the camera rotation to zero
+    /// </summary>
+    public PlayerCamera RecenterView()
+    {
+        _cameraRotation.y = 0f;
+        ResetFOV();
+        return this;
+    }
+
+    /// <summary>
+    /// Set the camera rotation to zero and rotate the body to face a target
+    /// </summary>
+    public PlayerCamera RecenterView(Vector3 targetForward)
+    {
+        RecenterView();
+        Vector3 oldCameraPos = _playerCamera.transform.position;
+        Quaternion oldCameraRot = _playerCamera.transform.rotation;
+        _playerBody.rotation = Quaternion.LookRotation(targetForward, transform.up);
+        _playerCamera.transform.position = oldCameraPos;
+        _playerCamera.transform.rotation = oldCameraRot;
+        return this;
+    }
+    
+    /// <summary>
+    /// Tween FOV to normal
+    /// </summary>
+    public PlayerCamera ResetFOV()
+    {
+        ITweenManager.Value(
+            gameObject,
+            _currentFOV,
+            _normalFOV,
+            0.4f,
+            EasingType.OutCubic,
+            t => _playerCamera.fieldOfView = t
+            ).Start();
+        _currentFOV = _normalFOV;
+        return this;
+    }
 
 }

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 /// <summary>
@@ -5,6 +6,8 @@ using UnityEngine;
 /// </summary>
 public abstract class Interactable : MonoBehaviour
 {
+    public event Action OnSelected;
+    
    //===== Current Hovering =====
 
     /// <summary>
@@ -35,7 +38,15 @@ public abstract class Interactable : MonoBehaviour
         CurrentHovering = null;
     }
     
-    public abstract void OnSelect();
+    //===== Interactions =====
+
+    public void Select()
+    {
+        OnSelect();
+        OnSelected?.Invoke();
+    }
+
+    protected abstract void OnSelect();
     
     protected virtual void OnHoverEnter() {}
     protected virtual void OnHoverStay() {}
