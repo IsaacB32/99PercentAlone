@@ -4,11 +4,11 @@ using UnityEngine;
 namespace ITween
 {
     /// <summary>
-    /// I made my own tweening library because why not, math functions from https://gamedevcheatsheet.com/easing#easeInOutBounce
+    /// I made my own tweening library because why not, math functions from https://gamedevcheatsheet.com/easing
     /// </summary>
     public static class Easing
     {
-        public static Func<float, float> GetEasingFunction(EasingType type)
+        public static Func<float, float> GetEasingFunction(EasingType type, float overshoot, AnimationCurve customCurve)
         {
             return type switch
             {
@@ -26,65 +26,65 @@ namespace ITween
                 EasingType.OutQuart => EaseOutQuart,
                 EasingType.InOutQuart => EaseInOutQuart,
                 EasingType.InExpo => EaseInExpo,
-                EasingType.OutExpo => EaseInOutExpo,
+                EasingType.OutExpo => EaseOutExpo,
                 EasingType.InOutExpo => EaseInOutExpo,
                 EasingType.InCirc => EaseInCirc,
                 EasingType.OutCirc => EaseOutCirc,
                 EasingType.InOutCirc => EaseInOutCirc,
-                EasingType.InBack => EaseInBack,
-                EasingType.OutBack => EaseOutBack,
-                EasingType.InOutBack => EaseInOutBack,
+                EasingType.InBack => t => EaseInBack(t, overshoot),
+                EasingType.OutBack => t => EaseOutBack(t, overshoot),
+                EasingType.InOutBack => t => EaseInOutBack(t, overshoot),
                 EasingType.InElastic => EaseInElastic,
                 EasingType.OutElastic => EaseOutElastic,
                 EasingType.InOutElastic => EaseInOutElastic,
                 EasingType.InBounce => EaseInBounce,
                 EasingType.OutBounce => EaseOutBounce,
                 EasingType.InOutBounce => EaseInOutBounce,
-                EasingType.Custom => throw new NotImplementedException("custom easing not implemented"),
+                EasingType.Custom => customCurve.Evaluate,
                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
         }
         
-        public static float Evaluate(float t, EasingType type, AnimationCurve customCurve = null)
+        public static Func<float, float> GetInvertedEasingFunction(EasingType type, float overshoot, AnimationCurve customCurve)
         {
             return type switch
             {
-                EasingType.Linear => t,
-                EasingType.InSine => EaseInSine(t),
-                EasingType.OutSine => EaseOutSine(t),
-                EasingType.InOutSine => EaseInOutSine(t),
-                EasingType.InQuad => EaseInQuad(t),
-                EasingType.OutQuad => EaseOutQuad(t),
-                EasingType.InOutQuad => EaseInOutQuad(t),
-                EasingType.InCubic => EaseInCubic(t),
-                EasingType.OutCubic => EaseOutCubic(t),
-                EasingType.InOutCubic => EaseInOutCubic(t),
-                EasingType.InQuart => EaseInQuart(t),
-                EasingType.OutQuart => EaseOutQuart(t),
-                EasingType.InOutQuart => EaseInOutQuart(t),
-                EasingType.InExpo => EaseInExpo(t),
-                EasingType.OutExpo => EaseInOutExpo(t),
-                EasingType.InOutExpo => EaseInOutExpo(t),
-                EasingType.InCirc => EaseInCirc(t),
-                EasingType.OutCirc => EaseOutCirc(t),
-                EasingType.InOutCirc => EaseInOutCirc(t),
-                EasingType.InBack => EaseInBack(t),
-                EasingType.OutBack => EaseOutBack(t),
-                EasingType.InOutBack => EaseInOutBack(t),
-                EasingType.InElastic => EaseInElastic(t),
-                EasingType.OutElastic => EaseOutElastic(t),
-                EasingType.InOutElastic => EaseInOutElastic(t),
-                EasingType.InBounce => EaseInBounce(t),
-                EasingType.OutBounce => EaseOutBounce(t),
-                EasingType.InOutBounce => EaseInOutBounce(t),
-                EasingType.Custom => EaseCustomCurve(t, customCurve),
+                EasingType.Linear => EaseLinear,
+                EasingType.InSine => EaseOutSine,
+                EasingType.OutSine => EaseInSine,
+                EasingType.InOutSine => EaseInOutSine,
+                EasingType.InQuad => EaseOutQuad,
+                EasingType.OutQuad => EaseInQuad,
+                EasingType.InOutQuad => EaseInOutQuad,
+                EasingType.InCubic => EaseOutCubic,
+                EasingType.OutCubic => EaseInCubic,
+                EasingType.InOutCubic => EaseInOutCubic,
+                EasingType.InQuart => EaseOutQuart,
+                EasingType.OutQuart => EaseInQuart,
+                EasingType.InOutQuart => EaseInOutQuart,
+                EasingType.InExpo => EaseOutExpo,
+                EasingType.OutExpo => EaseInExpo,
+                EasingType.InOutExpo => EaseInOutExpo,
+                EasingType.InCirc => EaseOutCirc,
+                EasingType.OutCirc => EaseInCirc,
+                EasingType.InOutCirc => EaseInOutCirc,
+                EasingType.InBack => t => EaseOutBack(t, overshoot),
+                EasingType.OutBack => t => EaseInBack(t, overshoot),
+                EasingType.InOutBack => t => EaseInOutBack(t, overshoot),
+                EasingType.InElastic => EaseOutElastic,
+                EasingType.OutElastic => EaseInElastic,
+                EasingType.InOutElastic => EaseInOutElastic,
+                EasingType.InBounce => EaseOutBounce,
+                EasingType.OutBounce => EaseInBounce,
+                EasingType.InOutBounce => EaseInOutBounce,
+                EasingType.Custom => invertedCustom,
                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
-        }
 
-        private static float EaseCustomCurve(float t, AnimationCurve curve)
-        {
-            return curve?.Evaluate(t) ?? throw new NullReferenceException("Easing type set to custom but no custom curve provided");
+            float invertedCustom(float t)
+            {
+                return 1f - customCurve.Evaluate(1f - t);
+            }
         }
 
         #region Math
@@ -218,24 +218,21 @@ namespace ITween
 
         #region Back
 
-        public static float EaseInBack(float t)
-        {
-            const float c1 = 1.70158f;
-            const float c3 = c1 + 1f;
-            return c3 * t * t * t - c1 * t * t;
+        public static float EaseInBack(float t, float overshoot)
+        { 
+            float c3 = overshoot + 1f;
+            return c3 * t * t * t - overshoot * t * t;
         }
 
-        public static float EaseOutBack(float t)
+        public static float EaseOutBack(float t, float overshoot)
         {
-            const float c1 = 1.70158f;
-            const float c3 = c1 + 1f;
-            return 1f + c3 * Mathf.Pow(t - 1f, 3f) + c1 * Mathf.Pow(t - 1f, 2f);
+            float c3 = overshoot + 1f;
+            return 1f + c3 * Mathf.Pow(t - 1f, 3f) + overshoot * Mathf.Pow(t - 1f, 2f);
         }
 
-        public static float EaseInOutBack(float t)
+        public static float EaseInOutBack(float t, float overshoot)
         {
-            const float c1 = 1.70158f;
-            const float c2 = c1 * 1.525f;
+            float c2 = overshoot * 1.525f;
             return t < 0.5f
                 ? (Mathf.Pow(2f * t, 2f) * ((c2 + 1f) * 2f * t - c2)) / 2f
                 : (Mathf.Pow(2f * t - 2f, 2f) * ((c2 + 1f) * (t * 2f - 2f) + c2) + 2f) / 2f;
