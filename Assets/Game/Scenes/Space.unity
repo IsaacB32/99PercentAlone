@@ -128,12 +128,16 @@ PrefabInstance:
     m_TransformParent: {fileID: 368257265}
     m_Modifications:
     - target: {fileID: 3428754819566263832, guid: c4439884f36796a708ef755ea5b08072, type: 3}
+      propertyPath: _gravityDirection.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3428754819566263832, guid: c4439884f36796a708ef755ea5b08072, type: 3}
       propertyPath: _gravityDirection.y
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3428754819566263832, guid: c4439884f36796a708ef755ea5b08072, type: 3}
       propertyPath: _gravityDirection.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 3428754819566263832, guid: c4439884f36796a708ef755ea5b08072, type: 3}
       propertyPath: _gravityEffectorThickness

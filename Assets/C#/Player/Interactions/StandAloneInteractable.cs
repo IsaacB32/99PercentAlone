@@ -1,12 +1,15 @@
+using System;
 using UnityEngine;
 
 /// <summary>
 /// Interactable designed to only be used for triggering its callback event, used for simple selections or debugging 
 /// </summary>
-public class StandAlone_Interactable : Interactable
+public class StandAloneInteractable : MonoBehaviour, IInteractable
 {
-    protected override void OnSelect()
+    public event Action Select;
+    
+    public void OnSelect()
     {
-        //do nothing 
+        Select?.Invoke(); 
     }
 }
