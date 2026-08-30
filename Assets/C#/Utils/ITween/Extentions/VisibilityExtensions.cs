@@ -16,7 +16,7 @@ namespace ITween
             Quaternion targetRot = toTransform.rotation;
             Vector3 targetScale = toTransform.localScale;
 
-            UnconfiguredTween visible = ITweenManager.Value(transform, 0f, 1f,
+            UnconfiguredTween visible = ITManager.Value(transform, 0f, 1f,
                 t =>
                 {
                     transform.position = Vector3.LerpUnclamped(fromPos, targetPos, t);
@@ -38,7 +38,7 @@ namespace ITween
             Quaternion targetRot = toTransform.localRotation;
             Vector3 targetScale = toTransform.localScale;
 
-            UnconfiguredTween visible = ITweenManager.Value(transform, 0f, 1f,
+            UnconfiguredTween visible = ITManager.Value(transform, 0f, 1f,
                 t =>
                 {
                     transform.localPosition = Vector3.LerpUnclamped(fromPos, targetPos, t);

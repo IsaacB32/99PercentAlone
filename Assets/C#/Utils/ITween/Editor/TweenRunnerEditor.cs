@@ -4,12 +4,12 @@ namespace ITween.Editor
 {
     using UnityEditor;
     
-    [CustomEditor(typeof(ITweenManager.ITweenRunner))]
+    [CustomEditor(typeof(ITManager.ITweenRunner))]
     public class TweenRunnerEditor : Editor
     {
         public override void OnInspectorGUI()
         {
-            ITweenManager.ITweenRunner runner = (ITweenManager.ITweenRunner)target;
+            ITManager.ITweenRunner runner = (ITManager.ITweenRunner)target;
 
             int amount = serializedObject.FindProperty("_activeAmount").intValue;
             EditorGUILayout.LabelField($"Active Tween Count: {amount}");

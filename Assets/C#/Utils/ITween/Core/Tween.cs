@@ -179,7 +179,7 @@ namespace ITween
             
             IsRunning = true;
             OnStart?.Invoke();
-            ITweenManager.StartTween(this);
+            ITManager.StartTween(this);
             return this;
         }
 
@@ -199,7 +199,7 @@ namespace ITween
             
             IsRunning = false;
             OnStop?.Invoke();
-            ITweenManager.StopTween(this);
+            ITManager.StopTween(this);
             
             if (!ignoreFlags && _flags.RestartWhenStopped)
             {
@@ -334,7 +334,7 @@ namespace ITween
 
             _target = null;
             
-            ITweenManager.StopTween(this);
+            ITManager.StopTween(this);
         }
 
         /// <summary>

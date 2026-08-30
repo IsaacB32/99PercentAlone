@@ -14,7 +14,7 @@ namespace ITween
         public static Tween IT_Fade(this SpriteRenderer sr, float toAlpha, TweenSettings settings, Action onComplete = null)
         {
             float fromAlpha = sr.color.a;
-            return ITweenManager.Value(
+            return ITManager.Value(
                 sr,
                 fromAlpha,
                 toAlpha,
@@ -40,7 +40,7 @@ namespace ITween
             Vector3 targetPos = toTransform.position;
             Quaternion targetRot = toTransform.rotation;
             
-            return ITweenManager.Value(transform, 0f, 1f, settings,
+            return ITManager.Value(transform, 0f, 1f, settings,
                 t =>
                 {
                     transform.position = Vector3.LerpUnclamped(fromPos, targetPos, t);
@@ -56,7 +56,7 @@ namespace ITween
         public static Tween IT_Move(this Transform transform, Vector3 toPos, ITweenSettings settings, Action onComplete = null)
         {
             Vector3 fromPos = transform.position;
-            return ITweenManager.Value(transform, 0f, 1f, settings,
+            return ITManager.Value(transform, 0f, 1f, settings,
                 t =>
                 {
                     transform.position = Vector3.LerpUnclamped(fromPos, toPos, t);
@@ -78,7 +78,7 @@ namespace ITween
             Quaternion targetRot = toTransform.rotation;
             Vector3 targetScale = toTransform.localScale;
             
-            return ITweenManager.Value(transform, 0f, 1f, settings,
+            return ITManager.Value(transform, 0f, 1f, settings,
                 t =>
                 {
                     transform.position = Vector3.LerpUnclamped(fromPos, targetPos, t);
@@ -97,7 +97,7 @@ namespace ITween
             ITween_VectorPath[] pathPoints = Array.ConvertAll(points, input => new ITween_VectorPath {Pos = input});
 
             TweenPath<ITween_VectorPath> path = new TweenPath<ITween_VectorPath>(fromPos, pathPoints);
-            return ITweenManager.Value(transform, 0f, 1f, settings,
+            return ITManager.Value(transform, 0f, 1f, settings,
                 t =>
                 {
                     TweenPath<ITween_VectorPath>.PathPoint target = path.FindTarget(t, onStepComplete);
@@ -135,7 +135,7 @@ namespace ITween
             ITween_TransformPath[] pathPoints = Array.ConvertAll(points, input => new ITween_TransformPath {transform = input});
 
             TweenPath<ITween_TransformPath> path = new TweenPath<ITween_TransformPath>(fromPoint, pathPoints);
-            return ITweenManager.Value(transform, 0f, 1f, settings,
+            return ITManager.Value(transform, 0f, 1f, settings,
                 t =>
                 {
                     TweenPath<ITween_TransformPath>.PathPoint target = path.FindTarget(t, onStepComplete);

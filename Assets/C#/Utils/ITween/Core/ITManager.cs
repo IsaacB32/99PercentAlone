@@ -11,7 +11,7 @@ namespace ITween
     /// <summary>
     /// Static class responsible for running Tweens
     /// </summary>
-    public static class ITweenManager
+    public static class ITManager
     {
         internal class ITweenRunner : MonoBehaviour
         {
