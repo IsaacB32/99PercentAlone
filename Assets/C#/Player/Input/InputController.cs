@@ -2,13 +2,6 @@ using UnityEngine;
 
 public abstract class InputController : MonoBehaviour
 {
-    [SerializeField] private InputMapType _actionMapType;
-
-    protected void SwitchToActionMap()
-    {
-        InputEngine.SwitchActionMap(_actionMapType);
-    }
-
     //===== State Machine =====
 
     public bool IsUpdateLocked { get; protected set; }
