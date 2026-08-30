@@ -56,7 +56,7 @@ public class Interactor : MonoBehaviour
     //=!= If issues check layer: Requires 'Interaction' =!=
     private void LateUpdate()
     {
-        Vector3 worldOrigin = _camera.ScreenToWorldPoint(_playerInputController.MousePosition);
+        Vector3 worldOrigin = _camera.ScreenToWorldPoint(_playerInputController.MouseDelta);
         if (Physics.Raycast(worldOrigin, transform.forward, out RaycastHit hit, _interactionDistance, _interactionLayerMask))
         {
             IInteractable iInteractable = hit.transform.GetComponent<IInteractable>();
@@ -72,7 +72,7 @@ public class Interactor : MonoBehaviour
     private void OnDrawGizmos()
     {
         if (!_drawLook || !Application.isPlaying) return;
-        Vector3 worldOrigin = _camera.ScreenToWorldPoint(_playerInputController.MousePosition);
+        Vector3 worldOrigin = _camera.ScreenToWorldPoint(_playerInputController.MouseDelta);
         Gizmos.DrawRay(worldOrigin, transform.forward * _interactionDistance);
     }
     

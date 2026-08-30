@@ -1,28 +1,26 @@
 using System;
 using ITween;
-using ITween.Animator;
 using NaughtyAttributes;
 using UnityEngine;
 
 /// <summary>
-/// Take control of the main camera and move it to a certain spot for a time
+/// Take control of the main camera and move it to a certain spot for a time when interacted
 /// </summary>
 public class CameraAnimator : MonoBehaviour
 {
-    [SerializeField] protected Transform _targetSpot;
+    [SerializeField] protected Transform _cameraTargetPoint;
     [SerializeField] private TweenSettings_Simple_Flagless _settings;
     
-    [Header("Camera Settings")]
-    
+    [Space(5)]
     [SerializeField] private bool _overrideMainCamera;
     [Tooltip("Camera to process interactions from, leave empty to use main camera")]
-    [SerializeField, ShowIf(nameof(_overrideMainCamera))] private Camera _camera = null;
+    [SerializeField, Intent, ShowIf(nameof(_overrideMainCamera))] private Camera _camera = null;
     
     [SerializeField] private bool _overrideReturnPosition;
     [Tooltip("Position to return camera to when done, leave empty to use global camera reference")]
-    [SerializeField, ShowIf(nameof(_overrideReturnPosition))] private Transform _returnPosition = null;
+    [SerializeField, Intent, ShowIf(nameof(_overrideReturnPosition))] private Transform _returnPosition = null;
     
-    [Header("Settings")]
+    [Space(5)]
     [SerializeField] private bool _lockInput = true;
     
     private void Start()
@@ -32,12 +30,12 @@ public class CameraAnimator : MonoBehaviour
 
     public virtual void AnimateToTarget(Action onComplete = null)
     {
-        Tween t = _camera.transform.IT_Move(_targetSpot, _settings);
+        Tween t = _camera.transform.IT_Move(_cameraTargetPoint, _settings);
         
-        InputEngine.HasInputLock = _lockInput;
+        if (_lockInput) InputEngine.InputLock.RegisterLockHolder(this);
         t.Start(() =>
         {
-            InputEngine.HasInputLock = false;
+            if (_lockInput) InputEngine.InputLock.UnregisterLockHolder(this);
             onComplete?.Invoke();
         });
     }
@@ -47,11 +45,11 @@ public class CameraAnimator : MonoBehaviour
         Tween t = _overrideReturnPosition ? 
             _camera.transform.IT_Move(_returnPosition, _settings) : _camera.transform.IT_Move(InputEngine.CameraOriginRef, _settings);
         
-        InputEngine.HasInputLock = _lockInput;
+        if (_lockInput) InputEngine.InputLock.RegisterLockHolder(this);
         t.Start(() =>
         {
             InputEngine.GetPlayerController().Input_PlayerCamera.RecenterView();
-            InputEngine.HasInputLock = false;
+            if (_lockInput) InputEngine.InputLock.UnregisterLockHolder(this);
             onComplete?.Invoke();
         });
     }

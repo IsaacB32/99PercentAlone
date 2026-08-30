@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ITween;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -12,23 +13,50 @@ public class InputEngine : MonoBehaviour
     //=!= SINGLETON MARKER =!=
     private static InputEngine _instance;
 
+    [SerializeField] private InputMapType _defaultInputType;
+    
+    [Space]
     [SerializeField] private PlayerInputController _playerInputController;
     [SerializeField] private ShipInputController _shipInputController;
     private static InputController _activeController;
     
+    [Space]
+    [SerializeField] private LayerMask _collisionLayers;
+    [SerializeField] private LayerMask _groundLayer;
+    [SerializeField] private LayerMask _wallLayer;
+
+    public static LayerMask CollisionLayers => _instance._collisionLayers;
+    public static LayerMask GroundLayer => _instance._groundLayer;
+    public static LayerMask WallLayer => _instance._wallLayer;
+    
     private static PlayerInput _playerInput;
     public static InputMapType ActiveMap { get; private set; }
+    public static event Action<InputMapType> OnSwitchInputMap;
+
+    public static Transform Engine { get; private set; }
 
     private void Awake()
     {
         if (_instance != null) Destroy(gameObject);
         _instance = this;
-        
+
+        Engine = transform;
         _playerInput = GetComponent<PlayerInput>();
         
         //set defaults
-        ActiveMap = InputMapType.Player;
-        _activeController = GetPlayerController();
+        if (_defaultInputType != InputMapType.Player) GetPlayerController().OnExit(InputMapType.None);
+        SwitchActionMap(_defaultInputType);
+        
+#if UNITY_EDITOR
+        Application.targetFrameRate = 60;
+#endif
+    }
+
+    private void Start()
+    {
+        // Lock cursor to center of screen and hide it
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     public static void SwitchActionMap(InputMapType mapType)
@@ -49,7 +77,6 @@ public class InputEngine : MonoBehaviour
             case InputMapType.Menu:
                 ActiveMap = InputMapType.Menu;
                 throw new NotImplementedException("Menu controller is not finished");
-                break;
             case InputMapType.None:
                 ActiveMap = InputMapType.None;
                 _activeController = null;
@@ -63,6 +90,7 @@ public class InputEngine : MonoBehaviour
         oldController?.OnExit(ActiveMap);
         _activeController?.OnEnter(ActiveMap);
         
+        OnSwitchInputMap?.Invoke(ActiveMap);
         _playerInput.SwitchCurrentActionMap(ActiveMap.ToString());
     }
     
@@ -73,20 +101,8 @@ public class InputEngine : MonoBehaviour
     
     //===== Input Lock =====
 
-    /// <summary>
-    /// Lock input by disabling the player input component
-    /// </summary>
-    public static bool HasInputLock { get; set; }
-
-    public static void LockInputUntilNextFrame()
-    {
-        HasInputLock = true;
-        UnlockInputNextFrame();
-    }
-    public static void UnlockInputNextFrame()
-    {
-        Delay.WaitForNextFrame(() => HasInputLock = false);
-    }
+    private Lock _inputLock = new Lock();
+    public static Lock InputLock => _instance._inputLock;
 
     //===== Control Reference =====
     
@@ -98,7 +114,7 @@ public class InputEngine : MonoBehaviour
     /// <summary>
     /// Reference to camera origin position for returning camera to default position
     /// </summary>
-    public static Transform CameraOriginRef => _instance._playerInputController._cameraOriginReference; 
+    public static Transform CameraOriginRef => _instance._playerInputController.CameraOriginReference; 
 
     #endregion
     

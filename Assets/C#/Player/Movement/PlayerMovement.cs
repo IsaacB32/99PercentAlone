@@ -1,8 +1,12 @@
 using System;
+using ITween;
+using JetBrains.Annotations;
 using UnityEngine;
 
 public class PlayerMovement : GravityBody
 {
+    public const float COLLISION_DISTANCE = 0.8277778F; 
+    
     [Header("Controller")]
     [SerializeField] private PlayerInputController _playerInputController;
     
@@ -26,6 +30,9 @@ public class PlayerMovement : GravityBody
     [SerializeField] private float _jumpForce = 20f; 
     [SerializeField] private float _stickToGroundForce = 8f;
 
+    //===== Exposed Properties =====
+    public Rigidbody RB => _rb;
+    
     //===== Gravity Movement Variables =====
     private Vector3 _movementVector;
     private Vector3 _smoothRef;
@@ -33,6 +40,7 @@ public class PlayerMovement : GravityBody
     //===== Weightless Movement Variables =====
     private Vector2 _weightlessRotationInput;
     private Vector2 _weightlessSmoothRef;
+    private Vector2 _rotationVector;
     
     //===== Movement States =====
     private Action CurrentMovement;
@@ -79,12 +87,19 @@ public class PlayerMovement : GravityBody
     
     private void OnSwitchInputState(PlayerInputController.MovementType newState)
     {
-        CurrentMovement = newState switch
+        switch (newState)
         {
-            PlayerInputController.MovementType.Gravity => GravityMovement,
-            PlayerInputController.MovementType.Weightless => WeightlessMovement,
-            _ => throw new ArgumentOutOfRangeException(nameof(newState), newState, null)
-        };
+            case PlayerInputController.MovementType.Gravity:
+                RB.interpolation = RigidbodyInterpolation.Interpolate;
+                CurrentMovement = GravityMovement;
+                break;
+            case PlayerInputController.MovementType.Weightless:
+                RB.interpolation = RigidbodyInterpolation.None;
+                CurrentMovement = WeightlessMovement;
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(newState), newState, null);
+        }
     }
 
     #endregion
@@ -113,15 +128,12 @@ public class PlayerMovement : GravityBody
     {
         Vector3 inputDirection = _playerInputController.MovementInput.normalized;
         
-        _weightlessRotationInput.x = Mathf.SmoothDamp(_weightlessRotationInput.x, inputDirection.x, ref _weightlessSmoothRef.x, _weightlessSmoothingAmount);
-        _weightlessRotationInput.y = Mathf.SmoothDamp(_weightlessRotationInput.y, inputDirection.z, ref _weightlessSmoothRef.y, _weightlessSmoothingAmount);
-        _weightlessRotationInput *= _weightlessRotationSpeed;
-        
-        Vector3 pitchAxis = _playerCamera.right;
-        Vector3 rollAxis  = -_playerCamera.forward;
+        _rotationVector.x = Mathf.SmoothDamp(_rotationVector.x, inputDirection.x, ref _weightlessSmoothRef.x, _weightlessSmoothingAmount);
+        _rotationVector.y = Mathf.SmoothDamp(_rotationVector.y, inputDirection.z, ref _weightlessSmoothRef.y, _weightlessSmoothingAmount);
 
-        transform.Rotate(pitchAxis, _weightlessRotationInput.y, Space.World);
-        transform.Rotate(rollAxis, _weightlessRotationInput.x, Space.World);
+        float rotationSpeed = _weightlessRotationSpeed * Time.deltaTime;
+        transform.Rotate(Vector3.right, _rotationVector.y * rotationSpeed, Space.Self);
+        transform.Rotate(Vector3.forward, -_rotationVector.x * rotationSpeed, Space.Self);
         
         //===== Thrusters
 
@@ -137,9 +149,24 @@ public class PlayerMovement : GravityBody
     protected new void FixedUpdate()
     {
         if (_playerInputController.IsUpdateLocked) return;
-        
+
+        //===== Collision Smoothing
+        if (_movementVector.magnitude > 0f)
+        {
+            if (_rb.SweepTest(_movementVector.normalized, out RaycastHit hit, COLLISION_DISTANCE, QueryTriggerInteraction.Ignore))
+            {
+                float distance = hit.distance;
+                float percent = Easing.EaseOutQuad(distance / COLLISION_DISTANCE);
+                _movementVector *= percent;
+            }
+        }
+        PhysicsUpdate();
+    }
+
+    private void PhysicsUpdate()
+    {
         base.FixedUpdate();
-        transform.position += _movementVector * Time.fixedDeltaTime;
+        _rb.MovePosition(_rb.position + _movementVector * Time.fixedDeltaTime);
     }
     
     protected override void ApplySourceGravity()
@@ -166,12 +193,57 @@ public class PlayerMovement : GravityBody
     //===== External Callers =====
     //methods that are called by other scripts to modify input/position
 
+    /// <summary>
+    /// Set _movementVector to zero and stop rigidbody velocity
+    /// </summary>
     public PlayerMovement ZeroOutMovementVector()
     {
         _movementVector = Vector3.zero;
         _rb.angularVelocity = _movementVector;
         _rb.linearVelocity = _movementVector;
         return this;
-    } 
+    }
+
+    /// <summary>
+    /// Set the physics of the Player to on/off
+    /// </summary>
+    public PlayerMovement SetEnablePhysics(bool value)
+    {
+        if (value) //enable
+        {
+            _rb.isKinematic = false;
+            _rb.constraints = RigidbodyConstraints.FreezeRotation;
+            _rb.interpolation = RigidbodyInterpolation.Interpolate;
+        }
+        else //disable 
+        {
+            _rb.isKinematic = true;
+            _rb.constraints = RigidbodyConstraints.FreezeAll;
+            _rb.interpolation = RigidbodyInterpolation.None;
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// Force Update the physics for a certain number of frames
+    /// </summary>
+    /// <param name="amount">amount of frames to update for</param>
+    /// <param name="onComplete">action once updates are complete</param>
+    public PlayerMovement ForceStepPhysics(int amount, [NotNull] Action onComplete)
+    {
+        if (amount == 0)
+        {
+            onComplete.Invoke();
+            return this;
+        }
+        
+        Delay.WaitForNextFrame(amount, () =>
+        {
+            CurrentMovement();
+            PhysicsUpdate();
+        }, onComplete);
+        
+        return this;
+    }
 
 }

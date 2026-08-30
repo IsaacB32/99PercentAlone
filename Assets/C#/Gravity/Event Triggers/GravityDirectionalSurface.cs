@@ -12,6 +12,8 @@ public class GravityDirectionalSurface : GravityDirectionalTrigger
         gravityEffector.center = Vector3.up * (_gravityEffectorThickness / 2f);
     }
     
+#if UNITY_EDITOR
+    
     //===== Inspector Util =====
 
     /// <summary>
@@ -34,4 +36,6 @@ public class GravityDirectionalSurface : GravityDirectionalTrigger
         gameObject.layer = Layers.Ground;
         child.AddComponent<GravityDirectionalSurface>().CopyParametersFrom(this);
     }
+#endif
+    
 }

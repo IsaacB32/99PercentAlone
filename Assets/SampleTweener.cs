@@ -8,15 +8,16 @@ public class SampleTweener : MonoBehaviour
     [SerializeField] private Transform _target;
     [SerializeField] private TweenSettings_Visibility _settings;
 
+    private VisibilityTween t;
+
     private IEnumerator Start()
     {
-        VisibilityTween t = transform.IT_Move(_target, _settings);
-        yield return new WaitForSeconds(1f);
-        t.SetVisible(true);
-        // yield return new WaitForSeconds(2f);
-        // t.SetVisible(true);
-        
-
+        t = transform.IT_Move(_target, _settings);
         yield break;
+    }
+
+    public void GO()
+    {
+        t.SetVisible(true);
     }
 }

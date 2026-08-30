@@ -410,7 +410,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInputCatcher
   _actionMapType: 1
   _enteringState: 1
-  <_cameraOriginReference>k__BackingField: {fileID: 7179501270462159106}
+  <CameraOriginReference>k__BackingField: {fileID: 7179501270462159106}
   <Input_PlayerMovement>k__BackingField: {fileID: 3828631857085851660}
   <Input_PlayerCamera>k__BackingField: {fileID: 2036618087941582490}
   _groundCheck: {fileID: 2005799242387480312}

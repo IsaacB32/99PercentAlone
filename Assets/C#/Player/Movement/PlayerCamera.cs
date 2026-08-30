@@ -49,11 +49,10 @@ public class PlayerCamera : MonoBehaviour
     [SerializeField] private float _landingShakeFrequency = 25f;
     
     [Header("Collision Settings")]
-    [SerializeField] private LayerMask _collisionMask;
     [SerializeField] private float _collisionRadius = 0.2f;
     [SerializeField] private float _collisionSmoothingTime = 0.05f;
-    [SerializeField] private float collisionBuffer = 0.1f;
-    [SerializeField] private float minDistanceFromPivot = 0.05f;
+    [SerializeField] private float _collisionBuffer = 0.1f;
+    [SerializeField] private float _minDistanceFromPivot = 0.05f;
 
     //===== References =====
     private Camera _playerCamera;
@@ -105,13 +104,6 @@ public class PlayerCamera : MonoBehaviour
 
         _basePosition = transform.localPosition;
         _currentCollisionDistance = _basePosition.magnitude;
-    }
-
-    private void Start()
-    {
-        // Lock cursor to center of screen and hide it
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
         
         _normalFOV = _playerCamera.fieldOfView;
         _currentFOV = _normalFOV;
@@ -136,7 +128,7 @@ public class PlayerCamera : MonoBehaviour
     {
         _cameraRotation.x += lookVector.x * mouseSensitivity;
         _cameraRotation.y -= lookVector.y * mouseSensitivity;
-
+        
         _cameraRotation.y = Mathf.Clamp(_cameraRotation.y - lookVector.y * mouseSensitivity, _minVerticalAngle, _maxVerticalAngle);
         _cameraSmoothing.y = Mathf.SmoothDampAngle(_cameraSmoothing.y, _cameraRotation.y, ref _smoothingRef.y, _cameraSmoothingTime);
         
@@ -151,11 +143,11 @@ public class PlayerCamera : MonoBehaviour
     {
         if (_playerInputController.IsUpdateLocked) return;
         
-        OnLook(_playerInputController.MousePosition);
+        OnLook(_playerInputController.MouseDelta);
         
         HandleZoom();
         HandleCameraShake();
-        HandleWallCollisions();
+        // HandleWallCollisions();
     }
 
     #region Camera Handlers
@@ -243,24 +235,25 @@ public class PlayerCamera : MonoBehaviour
             _cameraShakeOffset = bobOffset + landingOffset;
         }
     
+        [Obsolete("Currently a sphere collider and custom collidion smoothing is being used instead")]
         private void HandleWallCollisions()
         {
             Vector3 desiredOffset = _basePosition + _cameraShakeOffset;
             float desiredDistance = desiredOffset.magnitude;
-    
+            
             if (desiredDistance < Mathf.Epsilon)
             {
                 transform.localPosition = desiredOffset;
                 _currentCollisionDistance = desiredDistance;
                 return;
             }
-    
+            
             Vector3 pivotWorld = _playerBody.position;
             Vector3 desiredWorld = _playerBody.TransformPoint(desiredOffset);
             Vector3 dir = (desiredWorld - pivotWorld).normalized;
-    
+            
             float targetDistance = desiredDistance;
-            RaycastHit[] hits = Physics.SphereCastAll(pivotWorld, _collisionRadius, dir, desiredDistance, _collisionMask, QueryTriggerInteraction.Ignore);
+            RaycastHit[] hits = Physics.SphereCastAll(pivotWorld, _collisionRadius, dir, desiredDistance, InputEngine.CollisionLayers, QueryTriggerInteraction.Ignore);
             float closest = float.PositiveInfinity;
             foreach (RaycastHit hit in hits)
             {
@@ -269,17 +262,18 @@ public class PlayerCamera : MonoBehaviour
             }
             if (closest < float.PositiveInfinity)
             {
-                targetDistance = Mathf.Max(minDistanceFromPivot, closest - collisionBuffer);
+                targetDistance = Mathf.Max(_minDistanceFromPivot, closest - _collisionBuffer);
             }
             
             _currentCollisionDistance = Mathf.SmoothDamp(_currentCollisionDistance, targetDistance, ref _currentCollisionSmoothRef, _collisionSmoothingTime);
-    
+            
             // Scale the desired offset to the clamped distance (preserves direction in local space)
             Vector3 finalOffset = desiredOffset.normalized * _currentCollisionDistance;
             transform.localPosition = finalOffset;
         }
+    
 
-    #endregion
+        #endregion
     
     //===== External Callers =====
     //methods that are called by other scripts to modify input/position
@@ -290,6 +284,7 @@ public class PlayerCamera : MonoBehaviour
     public PlayerCamera RecenterView()
     {
         _cameraRotation.y = 0f;
+        _cameraSmoothing.y = 0f;
         ResetFOV();
         return this;
     }
@@ -324,5 +319,4 @@ public class PlayerCamera : MonoBehaviour
         _currentFOV = _normalFOV;
         return this;
     }
-
 }

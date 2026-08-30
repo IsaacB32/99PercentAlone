@@ -29,7 +29,7 @@ public class PlayerInputController : InputController
     }
     
     [field: Header("References")]
-    [field: SerializeField] public Transform _cameraOriginReference { get; private set; }
+    [field: SerializeField] public Transform CameraOriginReference { get; private set; }
     [field: SerializeField] public PlayerMovement Input_PlayerMovement { get; private set; }
     [field: SerializeField] public PlayerCamera Input_PlayerCamera { get; private set; } 
     
@@ -38,7 +38,6 @@ public class PlayerInputController : InputController
     [Header("Ground Check")]
     [SerializeField] private Transform _groundCheck;
     [SerializeField] private float _groundDistance;
-    [SerializeField] private LayerMask _groundMask;
 
     [Header("Camera Settings")]
     [SerializeField] private bool _ignoreInputWhenCursorUnlocked = true;
@@ -49,7 +48,7 @@ public class PlayerInputController : InputController
     
     //===== Input Properties =====
     public Vector3 MovementInput { get; private set; }
-    public Vector3 MousePosition { get; private set; }
+    public Vector3 MouseDelta { get; private set; }
     
     //===== Callbacks =====
     public event Action<bool> OnJump;
@@ -68,6 +67,7 @@ public class PlayerInputController : InputController
     
     public override void OnEnter(InputMapType oldType)
     {
+        Input_PlayerMovement.SetEnablePhysics(true);
         IsUpdateLocked = false;
     }
 
@@ -75,15 +75,14 @@ public class PlayerInputController : InputController
     {
         IsUpdateLocked = true;
         ResetValues();
-        
-        
+        Input_PlayerMovement.SetEnablePhysics(false);
     }
 
     //===== Input Action Callbacks =====
     
     public void Movement(InputAction.CallbackContext context)
     {
-        if (InputEngine.HasInputLock) return;
+        if (InputEngine.InputLock) return;
         
         IsMoving = true;
         if (context.canceled) IsMoving = false;
@@ -94,7 +93,7 @@ public class PlayerInputController : InputController
 
     public void Jump(InputAction.CallbackContext context)
     {
-        if (InputEngine.HasInputLock) return;
+        if (InputEngine.InputLock) return;
         
         if (context.performed)
         {
@@ -110,7 +109,7 @@ public class PlayerInputController : InputController
 
     public void Running(InputAction.CallbackContext context)
     {
-        if (InputEngine.HasInputLock) return;
+        if (InputEngine.InputLock) return;
         
         if (context.performed) IsRunning = true;
         else if (context.canceled) IsRunning = false;
@@ -118,14 +117,14 @@ public class PlayerInputController : InputController
 
     public void Interact(InputAction.CallbackContext context)
     {
-        if (InputEngine.HasInputLock) return;
+        if (InputEngine.InputLock) return;
         
         if (context.performed) _interactPressedTime = Time.frameCount;
     }
 
     public void Aim(InputAction.CallbackContext context)
     {
-        if (InputEngine.HasInputLock) return;
+        if (InputEngine.InputLock) return;
         
         if (context.performed) IsAiming = true;
         else if (context.canceled) IsAiming = false;
@@ -133,12 +132,12 @@ public class PlayerInputController : InputController
 
     public void Look(InputAction.CallbackContext context)
     {
-        if (InputEngine.HasInputLock) return;
+        if (InputEngine.InputLock) return;
         
         // Skip when the cursor is unlocked so menus don't yank the camera around
         if (_ignoreInputWhenCursorUnlocked && Cursor.lockState != CursorLockMode.Locked)
         {
-            MousePosition = Vector2.zero;
+            MouseDelta = Vector2.zero;
             return;
         }
 
@@ -155,7 +154,7 @@ public class PlayerInputController : InputController
         if (_invertMouse) mouseY = -mouseY;
 
         Vector2 activeMouse = new Vector2(mouseX, mouseY);
-        MousePosition = activeMouse;
+        MouseDelta = activeMouse;
     }
     
     //===== External Callers =====
@@ -168,12 +167,23 @@ public class PlayerInputController : InputController
     /// <param name="cameraMove">should the camera move with the player</param>
     public void SnapPlayerPosition(Vector3 point, bool cameraMove = true)
     {
-        Vector3 dis = transform.position - point;
-        transform.position = point;
+        Vector3 dis = Input_PlayerMovement.RB.position - point;
+        Input_PlayerMovement.RB.position = transform.position = point;
         if (!cameraMove)
         {
-            Input_PlayerCamera.gameObject.transform.position += dis;
+            Input_PlayerCamera.transform.position += dis;
         }
+    }
+    
+    /// <summary>
+    /// Move the player to a point and rotate the camera to look in a direction
+    /// </summary>
+    /// <param name="point">point to move to</param>
+    /// <param name="cameraRotation">rotation of camera after snap</param>
+    /// <param name="cameraMove">should the camera move with the player</param>
+    public void SnapPlayerPosition(Vector3 point, Vector3 cameraRotation, bool cameraMove = true)
+    {
+        //todo: if needed
     }
     
     //===== Other =====
@@ -184,7 +194,7 @@ public class PlayerInputController : InputController
         IsRunning = false;
         IsAiming = false;
         MovementInput = Vector3.zero;
-        MousePosition = Vector3.zero;
+        MouseDelta = Vector3.zero;
         
         Input_PlayerMovement.ZeroOutMovementVector();
         Input_PlayerCamera.RecenterView();
@@ -192,7 +202,7 @@ public class PlayerInputController : InputController
     
     private void FixedUpdate()
     {
-        IsGrounded = Physics.CheckSphere(_groundCheck.position, _groundDistance, _groundMask);
+        IsGrounded = Physics.CheckSphere(_groundCheck.position, _groundDistance, InputEngine.GroundLayer);
     }
 
     //===== DEBUGGING =====
