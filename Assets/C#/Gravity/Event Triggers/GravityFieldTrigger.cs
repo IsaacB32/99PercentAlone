@@ -26,13 +26,17 @@ public class GravityFieldTrigger : GravityEventTrigger
     {
         body.RemoveGravitySources();
     }
-
+    
+    
+    #if UNITY_EDITOR
+    
     /// <summary>
     /// Update the _radius to the farthest GravitySource
     /// </summary>
     [Button("Update Radius")]
     private void FindFarthestSource()
     {
+        _sources = GetComponentsInChildren<GravitySource>();
         float largestDistance = 0f;
         // ReSharper disable once LoopCanBeConvertedToQuery
         foreach (GravitySource source in _sources)
@@ -60,5 +64,7 @@ public class GravityFieldTrigger : GravityEventTrigger
         collider.radius = _radius;
         collider.isTrigger = true;
     }
+    
+    #endif
 }
 

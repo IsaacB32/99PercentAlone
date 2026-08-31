@@ -7,7 +7,7 @@ public class GravityCube : GravitySource
     
     //===== Properties =====
 
-    public override float Mass => _surfaceGravity * _size * _width / (SpaceUtils.GRAVITATIONAL_CONST * 0.1f);
+    public override float Mass => _surfaceGravity * _size * _width / (SpaceUtils.GRAVITATIONAL_CONST);
 
     public override Vector3 VectorToCenter(Vector3 objectPosition)
     {

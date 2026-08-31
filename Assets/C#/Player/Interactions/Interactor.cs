@@ -7,8 +7,12 @@ using UnityEngine;
 /// </summary>
 public class Interactor : MonoBehaviour
 {
-    [Tooltip("Camera to process interactions from, leave empty to use main camera")]
+    [Header("Controller")]
+    [SerializeField] private PlayerInputController _playerInputController;
+    [Space]
+    
     [SerializeField] private bool _overrideMainCamera;
+    [Tooltip("Camera to process interactions from, leave empty to use main camera")]
     [SerializeField, ShowIf(nameof(_overrideMainCamera))] private Camera _camera = null;
 
     [SerializeField] private LayerMask _interactionLayerMask = Layers.Interaction;
@@ -24,17 +28,43 @@ public class Interactor : MonoBehaviour
         if (_camera == null) _camera = Camera.main;
     }
     
+    //===== Current Hovering =====
+
+    /// <summary>
+    /// Currently hovering object in the game
+    /// </summary>
+    public static IInteractable CurrentHovering { get; private set; }
+    
+    /// <summary>
+    /// Updates the CurrentHovering and calls OnHover actions
+    /// </summary>
+    public static void RefreshHovering(IInteractable iInteractable)
+    {
+        IInteractable.RefreshHovering(iInteractable);
+        CurrentHovering = iInteractable;
+    }
+    
+    /// <summary>
+    /// Resets the CurrentHovering with no callbacks for OnHover actions
+    /// </summary>
+    public static void ClearCurrentHovering()
+    {
+        CurrentHovering = null;
+    }
+    
+    
+    //=!= If issues check layer: Requires 'Interaction' =!=
     private void LateUpdate()
     {
-        Vector3 worldOrigin = _camera.ScreenToWorldPoint(InputCatcher.MousePosition);
+        Vector3 worldOrigin = _camera.ScreenToWorldPoint(_playerInputController.MouseDelta);
         if (Physics.Raycast(worldOrigin, transform.forward, out RaycastHit hit, _interactionDistance, _interactionLayerMask))
         {
-            Interactable interactable = hit.transform.GetComponent<Interactable>();
-            Interactable.RefreshHovering(interactable);
+            IInteractable iInteractable = hit.transform.GetComponent<IInteractable>();
+            RefreshHovering(iInteractable);
             
-            if (InputCatcher.InteractPressedThisFrame) interactable.OnSelect();
+            if (_playerInputController.InteractPressedThisFrame) iInteractable.OnSelect();
         } 
-        else Interactable.RefreshHovering(null);
+        else RefreshHovering(null);
     }
 
     #if UNITY_EDITOR
@@ -42,7 +72,7 @@ public class Interactor : MonoBehaviour
     private void OnDrawGizmos()
     {
         if (!_drawLook || !Application.isPlaying) return;
-        Vector3 worldOrigin = _camera.ScreenToWorldPoint(InputCatcher.MousePosition);
+        Vector3 worldOrigin = _camera.ScreenToWorldPoint(_playerInputController.MouseDelta);
         Gizmos.DrawRay(worldOrigin, transform.forward * _interactionDistance);
     }
     

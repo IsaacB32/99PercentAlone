@@ -1,9 +1,13 @@
 using System;
 using UnityEngine;
 using Random = UnityEngine.Random;
+using ITween;
 
-public class PlayerCameraController : MonoBehaviour
+public class PlayerCamera : MonoBehaviour
 {
+    [Header("Controller")]
+    [SerializeField] private PlayerInputController _playerInputController;
+    
     [Header("Camera Constraints")] 
     [SerializeField] private float mouseSensitivity = 1f;
     [SerializeField] private float _minVerticalAngle = -90f;
@@ -45,11 +49,10 @@ public class PlayerCameraController : MonoBehaviour
     [SerializeField] private float _landingShakeFrequency = 25f;
     
     [Header("Collision Settings")]
-    [SerializeField] private LayerMask _collisionMask;
     [SerializeField] private float _collisionRadius = 0.2f;
     [SerializeField] private float _collisionSmoothingTime = 0.05f;
-    [SerializeField] private float collisionBuffer = 0.1f;
-    [SerializeField] private float minDistanceFromPivot = 0.05f;
+    [SerializeField] private float _collisionBuffer = 0.1f;
+    [SerializeField] private float _minDistanceFromPivot = 0.05f;
 
     //===== References =====
     private Camera _playerCamera;
@@ -79,6 +82,19 @@ public class PlayerCameraController : MonoBehaviour
     private float _currentCollisionDistance;
     private float _currentCollisionSmoothRef; //useless SmoothDamp value
 
+    #region Subscribe
+
+    private void OnEnable()
+    {
+        _playerInputController.OnSwitchInputState += OnSwitchInputState;
+    }
+
+    private void OnDisable()
+    {
+        _playerInputController.OnSwitchInputState -= OnSwitchInputState;
+    }
+
+    #endregion
 
     private void Awake()
     {
@@ -88,62 +104,31 @@ public class PlayerCameraController : MonoBehaviour
 
         _basePosition = transform.localPosition;
         _currentCollisionDistance = _basePosition.magnitude;
-    }
-
-    private void Start()
-    {
-        // Lock cursor to center of screen and hide it
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
         
         _normalFOV = _playerCamera.fieldOfView;
         _currentFOV = _normalFOV;
         _targetFOV = _normalFOV;
     }
-
-    #region Subscribe
-
-    private void OnEnable()
-    {
-        InputCatcher.OnLook += OnLook;
-        InputCatcher.OnSwitchInputState += OnSwitchInputState;
-
-    }
-
-    private void OnDisable()
-    {
-        InputCatcher.OnLook -= OnLook;
-        InputCatcher.OnSwitchInputState -= OnSwitchInputState;
-    }
-
-    #endregion
     
     #region Event Methods
     
-    private void OnLook(Vector2 lookVector)
-    {
-        _cameraRotation.x += lookVector.x * mouseSensitivity;
-        _cameraRotation.y -= lookVector.y * mouseSensitivity;
-
-        CameraMovement(lookVector);
-    }
-    
-    
-    private void OnSwitchInputState(PlayerInputState newState)
+    private void OnSwitchInputState(PlayerInputController.MovementType newState)
     {
         _cameraSmoothingTime = newState switch
         {
-            PlayerInputState.Gravity => _gravitySmoothTime,
-            PlayerInputState.Weightless => _spaceSmoothTime,
-            PlayerInputState.Menu => throw new NotImplementedException(),
+            PlayerInputController.MovementType.Gravity => _gravitySmoothTime,
+            PlayerInputController.MovementType.Weightless => _spaceSmoothTime,
             _ => throw new ArgumentOutOfRangeException(nameof(newState), newState, null)
         };
     }
     
     #endregion
     
-    private void CameraMovement(Vector2 lookVector)
+    private void OnLook(Vector2 lookVector)
     {
+        _cameraRotation.x += lookVector.x * mouseSensitivity;
+        _cameraRotation.y -= lookVector.y * mouseSensitivity;
+        
         _cameraRotation.y = Mathf.Clamp(_cameraRotation.y - lookVector.y * mouseSensitivity, _minVerticalAngle, _maxVerticalAngle);
         _cameraSmoothing.y = Mathf.SmoothDampAngle(_cameraSmoothing.y, _cameraRotation.y, ref _smoothingRef.y, _cameraSmoothingTime);
         
@@ -152,23 +137,28 @@ public class PlayerCameraController : MonoBehaviour
         
         transform.localEulerAngles = Vector3.right * _cameraSmoothing.y;
         _playerBody.Rotate(Vector3.up * Mathf.DeltaAngle(smoothXOld, _cameraSmoothing.x), Space.Self);
-    } 
+    }
     
     void Update()
     {
+        if (_playerInputController.IsUpdateLocked) return;
+        
+        OnLook(_playerInputController.MouseDelta);
+        
         HandleZoom();
         HandleCameraShake();
-        HandleWallCollisions();
+        // HandleWallCollisions();
     }
 
     #region Camera Handlers
 
         private void HandleZoom()
         {
-            bool isPlayerRunning = InputCatcher.IsRunning;
-    
-            if (InputCatcher.IsAiming) _targetFOV = _zoomedFOV;
-            else if (InputCatcher.CurrentInputState == PlayerInputState.Gravity && isPlayerRunning) _targetFOV = _runningFOV;
+            if (_playerInputController.IsAiming) _targetFOV = _zoomedFOV;
+            else if (_playerInputController.CurrentMovementType == PlayerInputController.MovementType.Gravity && _playerInputController.IsRunning)
+            {
+                if (_playerInputController.IsMoving) _targetFOV = _runningFOV;
+            }
             else  _targetFOV = _normalFOV;
     
             float zoomT = 1f - Mathf.Exp(-_zoomSpeed * Time.deltaTime);
@@ -185,9 +175,9 @@ public class PlayerCameraController : MonoBehaviour
                 return;
             }
     
-            bool isGrounded = InputCatcher.IsGrounded;
-            bool isMoving = InputCatcher.IsMoving;
-            bool isRunning = InputCatcher.IsRunning;
+            bool isGrounded = _playerInputController.IsGrounded;
+            bool isMoving = _playerInputController.IsMoving;
+            bool isRunning = _playerInputController.IsRunning;
     
             // Detect landing
             if (isGrounded && !_wasGrounded)
@@ -205,7 +195,7 @@ public class PlayerCameraController : MonoBehaviour
                 targetFreq = isRunning ? _runBobFrequency : _walkBobFrequency;
             }
     
-            if (InputCatcher.IsAiming)
+            if (_playerInputController.IsAiming)
             {
                 targetAmount *= _aimShakeMultiplier;
             }
@@ -245,24 +235,25 @@ public class PlayerCameraController : MonoBehaviour
             _cameraShakeOffset = bobOffset + landingOffset;
         }
     
+        [Obsolete("Currently a sphere collider and custom collidion smoothing is being used instead")]
         private void HandleWallCollisions()
         {
             Vector3 desiredOffset = _basePosition + _cameraShakeOffset;
             float desiredDistance = desiredOffset.magnitude;
-    
+            
             if (desiredDistance < Mathf.Epsilon)
             {
                 transform.localPosition = desiredOffset;
                 _currentCollisionDistance = desiredDistance;
                 return;
             }
-    
+            
             Vector3 pivotWorld = _playerBody.position;
             Vector3 desiredWorld = _playerBody.TransformPoint(desiredOffset);
             Vector3 dir = (desiredWorld - pivotWorld).normalized;
-    
+            
             float targetDistance = desiredDistance;
-            RaycastHit[] hits = Physics.SphereCastAll(pivotWorld, _collisionRadius, dir, desiredDistance, _collisionMask, QueryTriggerInteraction.Ignore);
+            RaycastHit[] hits = Physics.SphereCastAll(pivotWorld, _collisionRadius, dir, desiredDistance, InputEngine.CollisionLayers, QueryTriggerInteraction.Ignore);
             float closest = float.PositiveInfinity;
             foreach (RaycastHit hit in hits)
             {
@@ -271,16 +262,61 @@ public class PlayerCameraController : MonoBehaviour
             }
             if (closest < float.PositiveInfinity)
             {
-                targetDistance = Mathf.Max(minDistanceFromPivot, closest - collisionBuffer);
+                targetDistance = Mathf.Max(_minDistanceFromPivot, closest - _collisionBuffer);
             }
             
             _currentCollisionDistance = Mathf.SmoothDamp(_currentCollisionDistance, targetDistance, ref _currentCollisionSmoothRef, _collisionSmoothingTime);
-    
+            
             // Scale the desired offset to the clamped distance (preserves direction in local space)
             Vector3 finalOffset = desiredOffset.normalized * _currentCollisionDistance;
             transform.localPosition = finalOffset;
         }
+    
 
-    #endregion
+        #endregion
+    
+    //===== External Callers =====
+    //methods that are called by other scripts to modify input/position
+    
+    /// <summary>
+    /// Set the camera rotation to zero
+    /// </summary>
+    public PlayerCamera RecenterView()
+    {
+        _cameraRotation.y = 0f;
+        _cameraSmoothing.y = 0f;
+        ResetFOV();
+        return this;
+    }
 
+    /// <summary>
+    /// Set the camera rotation to zero and rotate the body to face a target
+    /// </summary>
+    public PlayerCamera RecenterView(Vector3 targetForward)
+    {
+        RecenterView();
+        Vector3 oldCameraPos = _playerCamera.transform.position;
+        Quaternion oldCameraRot = _playerCamera.transform.rotation;
+        _playerBody.rotation = Quaternion.LookRotation(targetForward, transform.up);
+        _playerCamera.transform.position = oldCameraPos;
+        _playerCamera.transform.rotation = oldCameraRot;
+        return this;
+    }
+    
+    /// <summary>
+    /// Tween FOV to normal
+    /// </summary>
+    public PlayerCamera ResetFOV()
+    {
+        ITManager.Value(
+            gameObject,
+            _currentFOV,
+            _normalFOV,
+            0.4f,
+            EasingType.OutCubic,
+            t => _playerCamera.fieldOfView = t
+            ).Start();
+        _currentFOV = _normalFOV;
+        return this;
+    }
 }
