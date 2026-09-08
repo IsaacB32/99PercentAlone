@@ -2,5 +2,5 @@ using UnityEngine;
 
 public class SampleAttributeUse : MonoBehaviour
 {
-   [Intent] [SerializeField] private int testing;
+   [Indent] [SerializeField] private int testing;
 }

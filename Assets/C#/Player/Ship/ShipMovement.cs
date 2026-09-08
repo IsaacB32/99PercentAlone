@@ -15,7 +15,7 @@ public class ShipMovement : MonoBehaviour
     [SerializeField] private float _maxSpeed;
     [SerializeField] private float _acceleration;
 
-    public event Action<float> OnShipMove; 
+    public event Action<Vector3> OnShipMove; 
 
     private Vector3 _movementVector;
     private Vector3 _snapShotUp = Vector3.up;
@@ -69,8 +69,6 @@ public class ShipMovement : MonoBehaviour
         if (_shipInputController.IsUpdateLocked) return;
         
         Vector2 mouseDelta = _shipInputController.MouseDelta;
-        // _cameraRotation.x += mouseDelta.x * _rotateSpeed;
-        // _cameraRotation.y -= mouseDelta.y * _rotateSpeed;
         
         Quaternion yawDelta = Quaternion.AngleAxis(mouseDelta.x * _rotateSpeed, _engineCache.rotation * Vector3.up);
         Quaternion pitchDelta = Quaternion.AngleAxis(-mouseDelta.y * _rotateSpeed, _engineCache.rotation * Vector3.right);
@@ -86,14 +84,28 @@ public class ShipMovement : MonoBehaviour
         _movementVector += relativeDirection * _acceleration;
         _movementVector = Vector3.ClampMagnitude(_movementVector, _maxSpeed);
         _engineCache.position += _movementVector * Time.fixedDeltaTime;
-        
-        OnShipMove?.Invoke(Vector3.Distance(_engineCache.position, UniverseBoundaries.WorldOrigin));
     }
 
-    public Vector3 ResetToWorldOrigin()
+    private void LateUpdate()
     {
-        Vector3 positionRef = _engineCache.position;
-        _engineCache.position = UniverseBoundaries.WorldOrigin;
-        return positionRef;
+        if (_shipInputController.IsUpdateLocked) return;
+        
+        OnShipMove?.Invoke(_engineCache.position);
+    }
+
+    /// <summary>
+    /// Reset the ship position to the world origin 
+    /// </summary>
+    public void ResetToWorldOrigin()
+    {
+        ResetToPosition(Universe.WorldOrigin);
+    }
+
+    /// <summary>
+    /// Set the ship position to the provided vector
+    /// </summary>
+    public void ResetToPosition(Vector3 pos)
+    {
+        _engineCache.position = pos + (_engineCache.position.normalized);
     }
 }

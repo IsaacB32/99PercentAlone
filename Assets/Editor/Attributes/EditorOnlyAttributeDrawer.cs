@@ -10,7 +10,7 @@ public class EditorOnlyAttributeDrawer : PropertyDrawerBase
         bool isDisabled = Application.isPlaying;
         using (new EditorGUI.DisabledGroupScope(isDisabled))
         {
-            EditorGUI.PropertyField(rect, property, label);
+            NaughtyEditorGUI.PropertyField(rect, property, true);
         }
     }
 }

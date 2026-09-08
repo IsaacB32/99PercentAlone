@@ -69,6 +69,7 @@ public class ShipInputController : InputController
       if (context.performed)
       {
          MouseDelta = Vector3.zero;
+         MovementInput = Vector3.zero;
          OnEndControlShip?.Invoke();
       }
    }
