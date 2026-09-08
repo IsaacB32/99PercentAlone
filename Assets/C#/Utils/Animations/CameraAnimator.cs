@@ -14,11 +14,11 @@ public class CameraAnimator : MonoBehaviour
     [Space(5)]
     [SerializeField] private bool _overrideMainCamera;
     [Tooltip("Camera to process interactions from, leave empty to use main camera")]
-    [SerializeField, Intent, ShowIf(nameof(_overrideMainCamera))] private Camera _camera = null;
+    [SerializeField, Indent, ShowIf(nameof(_overrideMainCamera))] private Camera _camera = null;
     
     [SerializeField] private bool _overrideReturnPosition;
     [Tooltip("Position to return camera to when done, leave empty to use global camera reference")]
-    [SerializeField, Intent, ShowIf(nameof(_overrideReturnPosition))] private Transform _returnPosition = null;
+    [SerializeField, Indent, ShowIf(nameof(_overrideReturnPosition))] private Transform _returnPosition = null;
     
     [Space(5)]
     [SerializeField] private bool _lockInput = true;

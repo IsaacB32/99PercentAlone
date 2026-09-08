@@ -6,6 +6,8 @@ using UnityEngine;
 /// </summary>
 public abstract class GravitySource : MonoBehaviour
 {
+    public const float GRAVITATIONAL_CONST = 0.01f;
+    
     //===== Settings =====
 
     [Header("Debug Visualize")]
@@ -20,7 +22,7 @@ public abstract class GravitySource : MonoBehaviour
     //===== Properties =====
 
     public virtual float Size => _size;
-    public virtual float Mass => _surfaceGravity * _size * _size / SpaceUtils.GRAVITATIONAL_CONST;
+    public virtual float Mass => _surfaceGravity * _size * _size / GRAVITATIONAL_CONST;
     
     //===== Calculations =====
 

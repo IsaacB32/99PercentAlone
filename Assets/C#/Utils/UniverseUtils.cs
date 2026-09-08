@@ -1,5 +1,6 @@
 using UnityEngine;
 
-public static class SpaceUtils
+public static class UniverseUtils
 {
+    
 }

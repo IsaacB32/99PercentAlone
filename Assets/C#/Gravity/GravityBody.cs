@@ -111,7 +111,7 @@ public class GravityBody : MonoBehaviour
             Vector3 vectorToCenter = source.VectorToCenter(_rb.position);
             float sqrDst = vectorToCenter.sqrMagnitude;
             Vector3 forceDir = vectorToCenter.normalized;
-            Vector3 acceleration = forceDir * SpaceUtils.GRAVITATIONAL_CONST * source.Mass / sqrDst;
+            Vector3 acceleration = forceDir * GravitySource.GRAVITATIONAL_CONST * source.Mass / sqrDst;
             
             _rb.AddForce(acceleration, ForceMode.Acceleration);
         
