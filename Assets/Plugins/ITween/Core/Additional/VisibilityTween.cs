@@ -1,5 +1,6 @@
 using System;
 using JetBrains.Annotations;
+using UnityEngine;
 
 namespace ITween
 {
@@ -21,6 +22,13 @@ namespace ITween
         public event Action<bool> OnVisibilityChanged;
         private Action _onComplete;
         
+        /// <summary>
+        /// New Visibility Tween
+        /// </summary>
+        /// <param name="target">Object target</param>
+        /// <param name="settings">Tween settings</param>
+        /// <param name="visibleTween">visible tween</param>
+        /// <param name="hiddenTween">hidden tween, leave blank for inverted hide</param>
         public VisibilityTween(
             [NotNull] UnityEngine.Object target,
             TweenSettings_Visibility settings,
@@ -80,5 +88,21 @@ namespace ITween
             _activeTween.Start();
             return this;
         }
+        
+        //=!= Remove when it works correctly =!=
+        //===== DEBUG METHOD =====
+
+        public static void SetVisible(VisibilityTween vt)
+        {
+            Debug.Log("set visible");
+            vt._visibleTween.Start();
+        }
+
+        public static void SetHidden(VisibilityTween vt)
+        {
+            Debug.Log("set hidden");
+            vt._hiddenTween.Start();
+        }
+        
     }
 }

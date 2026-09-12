@@ -56,6 +56,8 @@ public class Interactor : MonoBehaviour
     //=!= If issues check layer: Requires 'Interaction' =!=
     private void LateUpdate()
     {
+        if (_playerInputController.IsUpdateLocked) return;
+        
         Vector3 worldOrigin = _camera.ScreenToWorldPoint(_playerInputController.MouseDelta);
         if (Physics.Raycast(worldOrigin, transform.forward, out RaycastHit hit, _interactionDistance, _interactionLayerMask))
         {

@@ -184,11 +184,12 @@ public class PlayerInputController : InputController
     public void SnapPlayerPosition(Vector3 point, Vector3 cameraRotation, bool cameraMove = true)
     {
         //todo: if needed
+        throw new NotImplementedException();
     }
     
     //===== Other =====
 
-    private void ResetValues()
+    public void ResetValues()
     {
         IsMoving = false;
         IsRunning = false;

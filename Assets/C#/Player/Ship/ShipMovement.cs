@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 public class ShipMovement : MonoBehaviour
@@ -14,13 +13,8 @@ public class ShipMovement : MonoBehaviour
     [Header("Movement Settings")]
     [SerializeField] private float _maxSpeed;
     [SerializeField] private float _acceleration;
-
-    public event Action<Vector3> OnShipMove; 
-
+    
     private Vector3 _movementVector;
-    private Vector3 _snapShotUp = Vector3.up;
-    private Vector3 _snapShotRight = Vector3.right;
-
     private Transform _engineCache;
 
     #region Subscribe
@@ -46,12 +40,7 @@ public class ShipMovement : MonoBehaviour
     
     //===== Ship Camera Animation =====
 
-    public void OnAnimateComplete()
-    {
-        _snapShotUp = _engineCache.up;
-        _snapShotRight = _engineCache.right;
-        InputEngine.SwitchActionMap(InputMapType.Ship);
-    }
+    public void OnAnimateComplete() { InputEngine.SwitchActionMap(InputMapType.Ship); }
 
     private void OnEndControlShip()
     {
@@ -59,7 +48,7 @@ public class ShipMovement : MonoBehaviour
 
         _shipGravityTrigger.SetGravityToUp();
         _shipGravityTrigger.OnGravityBodyEnter(InputEngine.GetPlayerController().Input_PlayerMovement);
-        _shipInteractable.AnimateToOrigin(() => { InputEngine.SwitchActionMap(InputMapType.Player); });
+        _shipInteractable.AnimateToOrigin(onComplete: () => { InputEngine.SwitchActionMap(InputMapType.Player); });
     }
 
     //===== Movement =====
@@ -85,14 +74,7 @@ public class ShipMovement : MonoBehaviour
         _movementVector = Vector3.ClampMagnitude(_movementVector, _maxSpeed);
         _engineCache.position += _movementVector * Time.fixedDeltaTime;
     }
-
-    private void LateUpdate()
-    {
-        if (_shipInputController.IsUpdateLocked) return;
-        
-        OnShipMove?.Invoke(_engineCache.position);
-    }
-
+    
     /// <summary>
     /// Reset the ship position to the world origin 
     /// </summary>

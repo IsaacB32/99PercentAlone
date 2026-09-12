@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using ITween;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -8,7 +6,7 @@ using UnityEngine.InputSystem;
 /// Controls and switches between different InputActionMaps
 /// </summary>
 [RequireComponent(typeof(PlayerInput))]
-public class InputEngine : MonoBehaviour
+public sealed class InputEngine : MonoBehaviour
 {
     //=!= SINGLETON MARKER =!=
     private static InputEngine _instance;
@@ -18,6 +16,7 @@ public class InputEngine : MonoBehaviour
     [Space]
     [SerializeField] private PlayerInputController _playerInputController;
     [SerializeField] private ShipInputController _shipInputController;
+    [SerializeField] private MenuInputController _menuInputController;
     private static InputController _activeController;
     
     [Space]
@@ -59,10 +58,15 @@ public class InputEngine : MonoBehaviour
         Cursor.visible = false;
     }
 
-    public static void SwitchActionMap(InputMapType mapType)
+    /// <summary>
+    /// Switch the input map and update the input controller to the correct type
+    /// </summary>
+    /// <returns>previous Input Map State</returns>
+    public static InputMapType SwitchActionMap(InputMapType mapType)
     {
-        if (mapType == ActiveMap) return;
+        if (mapType == ActiveMap) return ActiveMap;
 
+        InputMapType oldMapType = ActiveMap;
         InputController oldController = _activeController;
         switch (mapType)
         {
@@ -76,12 +80,13 @@ public class InputEngine : MonoBehaviour
                 break;
             case InputMapType.Menu:
                 ActiveMap = InputMapType.Menu;
-                throw new NotImplementedException("Menu controller is not finished");
+                _activeController = GetMenuController();
+                break;
             case InputMapType.None:
                 ActiveMap = InputMapType.None;
                 _activeController = null;
                 oldController.OnExit(ActiveMap);
-                return;
+                return oldMapType;
             default:
                 ActiveMap = InputMapType.None;
                 throw new Exception("InputMapType is set to NONE, please set a type");
@@ -92,6 +97,7 @@ public class InputEngine : MonoBehaviour
         
         OnSwitchInputMap?.Invoke(ActiveMap);
         _playerInput.SwitchCurrentActionMap(ActiveMap.ToString());
+        return oldMapType;
     }
     
     /// <summary>
@@ -108,6 +114,7 @@ public class InputEngine : MonoBehaviour
     
     public static PlayerInputController GetPlayerController() { return _instance._playerInputController; }
     public static ShipInputController GetShipController() { return _instance._shipInputController; }
+    public static MenuInputController GetMenuController() { return _instance._menuInputController; }
 
     #region Subreferences
 

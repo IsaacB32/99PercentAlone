@@ -46,7 +46,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d0c2d71ab4c7ee52bcceb5a494d4a5f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UniverseBoundaries
-  _shipMovement: {fileID: 0}
+  _playerEngine: {fileID: 0}
   _universeOrigin:
     x: 0
     y: 0
@@ -66,7 +66,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UniverseLoader
   _target: {fileID: 762581588592109808}
-  _loadRange: 50
+  _loadRange: 100
   _unloadBuffer: 10
   _universeObjects: {fileID: 11400000, guid: 52de240f46a63bf9f8e674dccb8e436b, type: 2}
 --- !u!114 &9222418864531881504
@@ -82,8 +82,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UniverseDrawer
   _target: {fileID: 762581588592109808}
-  _drawUniverseRadius: 1
-  _drawGrid: 1
+  _drawUniverseRadius: 0
+  _drawGrid: 0
   _gridSize: 28
   _yLevel: 0
   _drawCoordinates: 1

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace ITween
 {
@@ -48,6 +49,52 @@ namespace ITween
             );
 
             return new VisibilityTween(transform, settings, visible);
+        }
+
+        public static VisibilityTween IT_Alpha(this Graphic graphic, float toAlpha, TweenSettings_Visibility settings)
+        {
+            float fromAlpha = graphic.color.a;
+            
+            UnconfiguredTween visible = ITManager.Value(graphic, 0f, 1f,
+                t =>
+                {
+                    Color tmp = graphic.color;
+                    tmp.a = Mathf.LerpUnclamped(toAlpha, fromAlpha, t);
+                    graphic.color = tmp;
+                }
+            );
+            
+            UnconfiguredTween hidden = ITManager.Value(graphic, 0f, 1f,
+                t =>
+                {
+                    Color tmp = graphic.color;
+                    tmp.a = Mathf.LerpUnclamped(fromAlpha, toAlpha, t);
+                    graphic.color = tmp;
+                }
+            );
+
+            return new VisibilityTween(graphic, settings, visible, hidden);
+        }
+        
+        public static VisibilityTween IT_Alpha(this CanvasGroup group, float toAlpha, TweenSettings_Visibility settings)
+        {
+            float fromAlpha = group.alpha;
+            
+            UnconfiguredTween visible = ITManager.Value(group, 0f, 1f,
+                t =>
+                {
+                    group.alpha = Mathf.LerpUnclamped(toAlpha, fromAlpha, t);
+                }
+            );
+            
+            UnconfiguredTween hidden = ITManager.Value(group, 0f, 1f,
+                t =>
+                {
+                    group.alpha = Mathf.LerpUnclamped(fromAlpha, toAlpha, t);
+                }
+            );
+
+            return new VisibilityTween(group, settings, visible, hidden);
         }
     }
 }

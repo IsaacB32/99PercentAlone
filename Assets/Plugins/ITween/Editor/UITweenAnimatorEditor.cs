@@ -4,36 +4,35 @@ namespace ITween.Animator.Editor
 {
     using UnityEditor;
     using NaughtyAttributes.Editor;
-
+    
     /// <summary>
     /// Custom Editor for a TweenAnimator to draw playback buttons 
     /// </summary>
-    [CustomEditor(typeof(TweenAnimator), true)]
-    public class TweenAnimatorEditor : NaughtyInspector
+    [CustomEditor(typeof(UITweenAnimator), true)]
+    public class UITweenAnimatorEditor : NaughtyInspector
     {
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
-
-            TweenAnimator tweenAnimator = (TweenAnimator)target;
+            
+            UITweenAnimator tweenAnimator = (UITweenAnimator)target;
 
             EditorGUILayout.BeginHorizontal();
             GUI.enabled = Application.isPlaying;
             
-            if (GUILayout.Button("Start"))
+            if (GUILayout.Button("Show"))
             {
-                tweenAnimator.ActiveTween.Start();
+                tweenAnimator.ActiveTween.SetVisible(true);
             }
 
-            if (GUILayout.Button("Stop"))
+            if (GUILayout.Button("Hide"))
             {
-                tweenAnimator.ActiveTween.Stop();
+                tweenAnimator.ActiveTween.SetVisible(false);
             }
 
-            if (GUILayout.Button("Restart"))
+            if (GUILayout.Button("Reset"))
             {
-                Tween.IT_ForceReturn(tweenAnimator.ActiveTween);
-                tweenAnimator.ActiveTween.Restart();
+                tweenAnimator.ActiveTween.SetVisible(false, false);
             }
             
             GUI.enabled = true;

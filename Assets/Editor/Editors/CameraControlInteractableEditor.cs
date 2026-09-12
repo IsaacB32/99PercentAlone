@@ -1,7 +1,7 @@
 using NaughtyAttributes.Editor;
 using UnityEditor;
 
-[CustomEditor(typeof(CameraControlInteractable), true)]
+[CustomEditor(typeof(CameraControlInteractable))]
 public class CameraControlInteractableEditor : NaughtyInspector
 {
     public override void OnInspectorGUI()
@@ -10,7 +10,7 @@ public class CameraControlInteractableEditor : NaughtyInspector
 
         EditorExtensions.DrawDefaultScriptProperty(target);
         
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("_cameraTargetPoint"));
+        NaughtyEditorGUI.PropertyField_Layout(serializedObject.FindProperty("_cameraTargetPoint"), true);
         EditorGUILayout.PropertyField(serializedObject.FindProperty("_playerTargetPoint"));
         
         SerializedProperty iterator = serializedObject.GetIterator();

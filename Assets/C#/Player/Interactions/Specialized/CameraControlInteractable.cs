@@ -1,4 +1,5 @@
 using System;
+using NaughtyAttributes;
 using UnityEngine;
 
 /// <summary>
@@ -7,7 +8,8 @@ using UnityEngine;
 public class CameraControlInteractable : CameraAnimator
     , IInteractable
 {
-    [SerializeField, Tooltip("where will the player be when the animation finishes")] private Transform _playerTargetPoint;
+    [SerializeField, Required("Player Target is required")] 
+    [Tooltip("where will the player be when the animation finishes")] private Transform _playerTargetPoint;
     
     public ICallbacks Delegate { get; set; }
     
@@ -16,12 +18,12 @@ public class CameraControlInteractable : CameraAnimator
         AnimateToTarget();
     }
     
-    public override void AnimateToTarget(Action _ = null)
+    public override void AnimateToTarget(bool animate = true, Action _ = null)
     {
         if (Delegate == null) throw new NullReferenceException($"Delegate cannot be null, looking for {typeof(ICallbacks)}");
         
         Delegate.OnBeforeAnimate();
-        base.AnimateToTarget(() =>
+        base.AnimateToTarget(animate, () =>
         {
             Delegate.OnAfterAnimate();
             InputEngine.GetPlayerController().SnapPlayerPosition(_playerTargetPoint.position, cameraMove: false);
