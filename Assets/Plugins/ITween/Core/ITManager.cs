@@ -13,22 +13,24 @@ namespace ITween
     /// </summary>
     public static class ITManager
     {
+        public static int TweenCounter = 0;
+        
         internal class ITweenRunner : MonoBehaviour
         {
             private const int INITIAL_CAPACITY = 50;
-            private Dictionary<int, Tween> _activeTweens { get; } = new Dictionary<int, Tween>(INITIAL_CAPACITY);
+            private Dictionary<int, ITween> _activeTweens { get; } = new Dictionary<int, ITween>(INITIAL_CAPACITY);
 
-            private List<Tween> _updateBuffer = new List<Tween>(); //buffer to separate Killed Tweens from Active Tweens
+            private List<ITween> _updateBuffer = new List<ITween>(); //buffer to separate Killed Tweens from Active Tweens
             private List<int> _toRemove = new List<int>();
 
             [SerializeField] private int _activeAmount;
 
-            public bool AddTween(Tween t)
+            public bool AddTween(ITween t)
             {
                 return _activeTweens.TryAdd(t.IDKey, t);
             }
 
-            public bool RemoveTween(Tween t)
+            public bool RemoveTween(ITween t)
             {
                 return _activeTweens.Remove(t.IDKey);
             }
@@ -38,7 +40,7 @@ namespace ITween
                 _updateBuffer.Clear();
                 _updateBuffer.AddRange(_activeTweens.Values);
                 
-                foreach (Tween tween in _updateBuffer)
+                foreach (ITween tween in _updateBuffer)
                 {
                     tween.Update();
                     if (!tween.IsAlive) _toRemove.Add(tween.IDKey);
@@ -60,15 +62,15 @@ namespace ITween
                 _updateBuffer.Clear();
                 _updateBuffer.AddRange(_activeTweens.Values);
                 
-                foreach (Tween tween in _updateBuffer)
+                foreach (ITween tween in _updateBuffer)
                 {
-                    Tween.IT_Kill(tween);
+                    tween.Kill(ignoreFlags: false);
                 }
                 
                 _toRemove.Clear();
                 _updateBuffer.Clear();
                 _activeTweens.Clear();
-                Tween.TweenCounter = 0;
+                TweenCounter = 0;
             }
         }
         
@@ -79,6 +81,7 @@ namespace ITween
             {
                 if (_runner == null)
                 {
+                    TweenCounter = 0;
                     GameObject runner = new GameObject("TweenRunner");
                     UnityEngine.Object.DontDestroyOnLoad(runner);
                     _runner = runner.AddComponent<ITweenRunner>();
@@ -91,7 +94,7 @@ namespace ITween
         [UnityEditor.InitializeOnLoadMethod]
         private static void ResetOnDomainReload()
         {
-            Tween.TweenCounter = 0;
+            TweenCounter = 0;
             _runner = null;
         }
 #endif
@@ -99,7 +102,7 @@ namespace ITween
         /// <summary>
         /// Creates a new Tween with TweenSettings
         /// </summary>
-        public static Tween Value(
+        public static Tween IT_Value(
             UnityEngine.Object target,
             float from, 
             float to, 
@@ -119,7 +122,7 @@ namespace ITween
         /// <summary>
         /// Creates a new Tween with Duration and EasingType
         /// </summary>
-        public static Tween Value(
+        public static Tween IT_Value(
             UnityEngine.Object target,
             float from, 
             float to, 
@@ -137,7 +140,10 @@ namespace ITween
             return tween;
         }
         
-        public static UnconfiguredTween Value(
+        /// <summary>
+        /// Create an Unconfigured Tween with no settings
+        /// </summary>
+        public static UnconfiguredTween IT_Value(
             UnityEngine.Object target,
             float from, 
             float to, 
@@ -153,7 +159,7 @@ namespace ITween
         /// <summary>
         /// Add a Tween to the Runner
         /// </summary>
-        public static bool StartTween(Tween tween)
+        internal static bool StartTween(ITween tween)
         {
             return Runner.AddTween(tween);
         }
@@ -161,7 +167,7 @@ namespace ITween
         /// <summary>
         /// Remove a Tween from the Runner
         /// </summary>
-        public static bool StopTween(Tween tween)
+        internal static bool StopTween(ITween tween)
         {
             return Runner.RemoveTween(tween);
         }

@@ -1,48 +1,58 @@
+using System;
+using System.Collections;
 using UnityEngine;
 
 namespace ITween.Animator
 {
-    /// <summary>
-    /// Wrapper for Tweens to show Editor playback buttons
-    /// </summary>
     public abstract class TweenAnimator : MonoBehaviour
     {
-        public Tween ActiveTween { get; private set; }
-        
-        protected virtual void Awake()
+        private VisibilityTween _activeHandle;
+
+        protected void Awake()
         {
-            ActiveTween = InitializeTween();
+            if (_activeHandle != null) return;
+            _activeHandle = InitializeTween();
         }
         
-        protected abstract Tween InitializeTween();
-    }
-    
-    /// <summary>
-    /// Wrapper for VisibilityTweens to show Editor playback buttons
-    /// </summary>
-    public abstract class VisibilityAnimator : MonoBehaviour
-    {
-        //TODO : write editor for this
-        public VisibilityTween ActiveTween { get; private set; }
-        
-        protected virtual void Awake()
-        {
-            ActiveTween = InitializeTween();
-        }
-        
+        /// <summary>
+        /// Set the ActiveTween
+        /// </summary>
         protected abstract VisibilityTween InitializeTween();
+
+        protected static void ForceInitializeGroup(TweenAnimator[] animators)
+        {
+            foreach (TweenAnimator animator in animators)
+            {
+                animator._activeHandle ??= animator.InitializeTween();
+            }
+        }
+        
+        //===== Tween Calls =====
+        
+        public virtual VisibilityTween SetVisible(bool visible, bool animate = true, Action onComplete = null)
+        {
+            // ReSharper disable once ConvertIfStatementToReturnStatement
+            if (_activeHandle == null) throw new Exception("ActiveHandle was not initialized");
+            return _activeHandle.SetVisible(visible, animate, onComplete);
+        }
+        
+        //===== Implicit Typing =====
+
+        /// <summary>
+        /// Implicitly assign the _target in the inspector
+        /// </summary>
+        protected virtual void AssignType()
+        {
+            //override point
+        }
+        
+        protected void Reset() => AssignType();
+        
+        protected static void ImplicitAssignType<TType>(ref TType component, GameObject o) where TType : Component
+        {
+            if (component != null) return;
+            TType[] components = o.GetComponents<TType>();
+            component = components.Length is 0 or > 1 ? null : components[0];
+        }
     }
 }
-
-//=!= A failed idea for a generic implementation of Tween Animation =!=
-/*
-   /// <summary>
-   /// MonoBehavior class for quickly adding Tween animations to objects
-   /// </summary>
-   public abstract class TweenAnimator<T, S> : TweenPlayer 
-       where S : ITweenSettings 
-   {
-       [SerializeField] protected T _target;
-       [SerializeField] protected S _settings;
-   } 
-*/

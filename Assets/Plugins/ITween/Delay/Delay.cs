@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace ITween
@@ -9,15 +10,12 @@ namespace ITween
     {
         private class DelayRunner : MonoBehaviour
         {
-            private const int DEFAULT_DELAY_CAPACITY = 50;
+            private Dictionary<ProtectedCoroutine, Coroutine> _allRunners = new Dictionary<ProtectedCoroutine, Coroutine>();
+            private int _nextDelayIndex = 0;
             
-            //todo: find a way to collect all running coroutines and destroy them as needed
-            private List<Coroutine> _allRunners = new List<Coroutine>(DEFAULT_DELAY_CAPACITY);
-            
-            public void StartTimer(float time, Action onComplete)
+            public ProtectedCoroutine StartTimer(float time, [NotNull] Action onComplete)
             {
-                StartCoroutine(Timer());
-                return;
+                return AsProtectedCoroutine(Timer());
                 
                 IEnumerator Timer()
                 {
@@ -25,11 +23,12 @@ namespace ITween
                     onComplete.Invoke();
                 }
             }
+            
+            //===== Coroutines =====
 
-            public void StartTimerRealtime(float time, Action onComplete)
+            public ProtectedCoroutine StartTimerRealtime(float time, [NotNull] Action onComplete)
             {
-                StartCoroutine(TimerRealtime());
-                return;
+                return AsProtectedCoroutine(TimerRealtime());
                 
                 IEnumerator TimerRealtime()
                 {
@@ -38,10 +37,9 @@ namespace ITween
                 }
             }
 
-            public void StartNextFrame(Action onComplete)
+            public ProtectedCoroutine StartNextFrame([NotNull] Action onComplete)
             {
-                StartCoroutine(NextFrame());
-                return;
+                return AsProtectedCoroutine(NextFrame());
                 
                 IEnumerator NextFrame()
                 {
@@ -50,11 +48,10 @@ namespace ITween
                 }
             }
             
-            public void StartNextFrame(int amount, Action stepAction, Action onComplete)
+            public ProtectedCoroutine StartNextFrame(int amount, [NotNull] Action stepAction, [NotNull] Action onComplete)
             {
                 int elapsed = 0;
-                StartCoroutine(NextFrame());
-                return;
+                return AsProtectedCoroutine(NextFrame());
                 
                 IEnumerator NextFrame()
                 {
@@ -68,16 +65,57 @@ namespace ITween
                 }
             }
 
-            public void StartWaitUntil(Func<bool> pred, Action onComplete)
+            public ProtectedCoroutine StartWaitUntil(Func<bool> pred, [NotNull] Action onComplete)
             {
-                StartCoroutine(When());
-                return;
+                return AsProtectedCoroutine(When());
                 
                 IEnumerator When()
                 {
                     yield return new WaitUntil(pred);
                     onComplete.Invoke();
                 }
+            }
+            
+            //===== Protected =====
+
+            public ProtectedCoroutine AsProtectedCoroutine([NotNull] IEnumerator enumerator, Action onComplete = null)
+            {
+                int id = ++_nextDelayIndex;
+                ProtectedCoroutine key = new ProtectedCoroutine(id);
+                Coroutine coroutine = StartCoroutine(CleanUp());
+
+                _allRunners.Add(key, coroutine);
+                return key;
+
+                IEnumerator CleanUp()
+                {
+                    yield return enumerator;
+                    _allRunners.Remove(key);
+                    onComplete?.Invoke();
+                }
+            }
+
+            public void StopAsProtectedCoroutine(ProtectedCoroutine coroutine)
+            {
+                if (_allRunners.TryGetValue(coroutine, out Coroutine target))
+                {
+                    StopCoroutine(target);
+                    _allRunners.Remove(coroutine);
+                }
+            }
+
+            public void DelayStopAll()
+            {
+                foreach (ProtectedCoroutine coroutine in _allRunners.Keys)
+                {   
+                    StopAsProtectedCoroutine(coroutine);
+                }
+                _allRunners.Clear();
+            }
+
+            public bool ProtectedCoroutineRunning(ProtectedCoroutine key)
+            {
+                return _allRunners.TryGetValue(key, out _);
             }
         }
         
@@ -107,7 +145,7 @@ namespace ITween
         /// <summary>
         /// Standard WaitForSeconds timer
         /// </summary>
-        public static void Wait(float timer, Action onComplete)
+        public static void Wait(float timer, [NotNull] Action onComplete)
         {
             Runner.StartTimer(timer, onComplete);
         }
@@ -115,7 +153,7 @@ namespace ITween
         /// <summary>
         /// Wait Realtime
         /// </summary>
-        public static void WaitRealtime(float timer, Action onComplete)
+        public static void WaitRealtime(float timer, [NotNull] Action onComplete)
         {
             Runner.StartTimerRealtime(timer, onComplete);
         }
@@ -123,7 +161,7 @@ namespace ITween
         /// <summary>
         /// Invoke action on next frame
         /// </summary>
-        public static void WaitForNextFrame(Action onComplete)
+        public static void WaitForNextFrame([NotNull] Action onComplete)
         {
             Runner.StartNextFrame(onComplete);
         }
@@ -134,7 +172,7 @@ namespace ITween
         /// <param name="amount">amount of frames to run</param>
         /// <param name="stepAction">action invoked each frame</param>
         /// <param name="onComplete">action on complete</param>
-        public static void WaitForNextFrame(int amount, Action stepAction, Action onComplete)
+        public static void WaitForNextFrame(int amount, [NotNull] Action stepAction, [NotNull] Action onComplete)
         {
             Runner.StartNextFrame(amount, stepAction, onComplete);
         }
@@ -142,10 +180,65 @@ namespace ITween
         /// <summary>
         /// Wait until a condition is met
         /// </summary>
-        public static void WaitUntil(Func<bool> pred, Action onComplete)
+        public static void WaitUntil(Func<bool> pred, [NotNull] Action onComplete)
         {
             Runner.StartWaitUntil(pred, onComplete);
         }
-        
+
+        /// <summary>
+        /// Start a coroutine that can be stopped by Delay
+        /// </summary>
+        /// <param name="enumerator">IEnumerator to run</param>
+        /// <param name="onComplete">Action fired when IEnumerator is finished</param>
+        /// <returns>ID of currently running coroutine</returns>
+        public static ProtectedCoroutine StartProtectedCoroutine(IEnumerator enumerator, Action onComplete = null)
+        {
+            return Runner.AsProtectedCoroutine(enumerator, onComplete);
+        }
+
+        /// <summary>
+        /// Stop provided ProtectedCoroutine
+        /// </summary>
+        public static void StopProtectedCoroutine(ProtectedCoroutine coroutine)
+        {
+            Runner.StopAsProtectedCoroutine(coroutine);
+        }
+
+        /// <summary>
+        /// Stop all ProtectedCoroutines
+        /// </summary>
+        public static void StopAll()
+        {
+            Runner.DelayStopAll();
+        }
+
+        public static bool IsProtectedCoroutineRunning(ProtectedCoroutine key)
+        {
+            return Runner.ProtectedCoroutineRunning(key);
+        }
+    }
+    
+    public readonly struct ProtectedCoroutine : IEquatable<ProtectedCoroutine>
+    {
+        private readonly int _id;
+
+        /// <summary>
+        /// Is the Coroutine running
+        /// </summary>
+        public bool IsRunning => _id != 0 && Delay.IsProtectedCoroutineRunning(this);
+
+        public void StopIfRunning()
+        {
+            if (IsRunning) Delay.StopProtectedCoroutine(this);
+        }
+
+        internal ProtectedCoroutine(int index)
+        {
+            _id = index;
+        }
+
+        public bool Equals(ProtectedCoroutine other) { return _id == other._id; }
+        public override bool Equals(object obj) { return obj is ProtectedCoroutine other && Equals(other); }
+        public override int GetHashCode() { return _id; }
     }
 }

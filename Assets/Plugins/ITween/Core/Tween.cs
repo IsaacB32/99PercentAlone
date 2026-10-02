@@ -1,6 +1,8 @@
 using System;
+using System.Collections;
 using JetBrains.Annotations;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace ITween
 {
@@ -9,12 +11,10 @@ namespace ITween
     /// <summary>
     /// Custom Tween 
     /// </summary>
-    public sealed class Tween
+    public sealed class Tween : ITween
     {
-        public static int TweenCounter = 0; 
-        
         //Core
-        public int IDKey { get; private set; }  //identifier
+        public int IDKey { get; }  //identifier
         private float _elapsed;
         private float _delayElapsed;
         private float _loopDelayElapsed;
@@ -29,41 +29,41 @@ namespace ITween
         public bool IsPaused { get; private set; } = false;     //is active under pause predicate
 
         //Target Reference + Callbacks
-        private UnityEngine.Object _target;
+        private Object _target;
         private event Action<float> _onUpdate;
-        public event Action OnStart; //start playing
-        public event Action OnStop; //stop playing
-        public event Action OnLoopComplete; //loop step finished (there -> repeat, there + back -> ping-pong)
-        public event Action OnComplete; //tween finished and killed
+        public event Action OnStart;            //start playing
+        public event Action OnStop;             //stop playing
+        public event Action OnLoopComplete;     //loop step finished (there -> repeat, there + back -> ping-pong)
+        public event Action OnComplete;         //tween finished
+        public event Action OnKilled;           //tween is killed (always runs)
         private Action _onUnpause;
+        private Action _onInternalComplete;     //resets itself when completed
 
         //Tween Settings
-        private ITweenSettings _settings;
+        public ITweenSettings Settings { get; }
         private TweenFlags _flags;
         private Func<float, float> _activeEasingFunction;
         private Func<float, float> _easingFunction, _invertedEasingFunction;
         private int _remainingLoops;
         
-        private bool _isDead => !IsAlive || _target == null;
-
         //===== Constructor =====
 
         public Tween(
-            [NotNull] UnityEngine.Object target,
+            [NotNull] Object target,
             [NotNull] ITweenSettings settings,
             [NotNull] Action<float> onUpdate,
             Action onComplete = null
         )
         {
             _target = target;
-            IDKey = TweenCounter++;
+            IDKey = ITManager.TweenCounter++;
             
             _onUpdate = onUpdate;
             OnComplete += onComplete;
             _pausePredicate = null;
             
-            _settings = settings;
-            _flags = settings.Flags;
+            Settings = settings;
+            _flags = (TweenFlags)settings.Flags;
 
             _easingFunction = Easing.GetEasingFunction(settings.EaseType, settings.Overshoot, settings.CustomCurve);
             _invertedEasingFunction = Easing.GetInvertedEasingFunction(settings.EaseType, settings.Overshoot, settings.CustomCurve);
@@ -80,14 +80,14 @@ namespace ITween
             if (_flags.StartAutomatically) Start();
         }
         
-        public Tween(Tween copy) : this(copy._target, copy._settings, copy._onUpdate, copy.OnComplete) { }
+        public Tween(Tween copy) : this(copy._target, copy.Settings, copy._onUpdate, copy.OnComplete) { }
         
         //===== Update =====
         
         public void Update()
         {
             //check lifetime
-            if (_isDead)
+            if (!IsAlive || _target == null)
             {
                 Kill(ignoreFlags: false);
                 return;
@@ -108,14 +108,14 @@ namespace ITween
             }
 
             //wait for delay
-            if (_delayElapsed < _settings.DelayTime)
+            if (_delayElapsed < Settings.DelayTime)
             {
                 _delayElapsed += deltaTime;
                 return;
             }
 
             //wait for loop delay
-            if (_loopDelayElapsed < _settings.HangTime)
+            if (_loopDelayElapsed < Settings.HangTime)
             {
                 _loopDelayElapsed += deltaTime;
                 return;
@@ -123,17 +123,17 @@ namespace ITween
 
             //handle easing
             _elapsed += deltaTime;
-            float t = Mathf.Clamp01(_elapsed / _settings.Duration);
+            float t = Mathf.Clamp01(_elapsed / Settings.Duration);
             if (!_isForwards) t = 1 - t;
             float easedT = _activeEasingFunction.Invoke(t);
             
             _onUpdate.Invoke(easedT);
 
             //handle completion
-            if (_elapsed >= _settings.Duration)
+            if (_elapsed >= Settings.Duration)
             {
                 _remainingLoops--;
-                if (_settings.LoopingType == LoopType.PingPong)
+                if (Settings.LoopingType == LoopType.PingPong)
                 {
                     //increase the loop count when finishing forwards so only counts one full ping-pong
                     if (_isForwards == _isStartingDirectionForwards)
@@ -146,22 +146,24 @@ namespace ITween
                     InvertSelf();
                 }
 
-                if (_settings.LoopingType == LoopType.Single || _remainingLoops <= 0)
+                if (Settings.LoopingType == LoopType.Single || _remainingLoops <= 0)
                 {
                     _onUpdate.Invoke(1f);
                     OnComplete?.Invoke();
+                    _onInternalComplete?.Invoke();
+                    _onInternalComplete = null;
                     Restart();
                     return;
                 }
 
-                if (_settings.LoopingType == LoopType.Repeat)
+                if (Settings.LoopingType == LoopType.Repeat)
                 {
                     _loopDelayElapsed = 0f; //start loopHangTime
                     OnLoopComplete?.Invoke();
                 }
 
                 //account for the overflow when deltaTime is lage 
-                do { _elapsed -= _settings.Duration; } while (_elapsed >= _settings.Duration); 
+                do { _elapsed -= Settings.Duration; } while (_elapsed >= Settings.Duration); 
             }
         }
         
@@ -175,7 +177,7 @@ namespace ITween
             if (!IsAlive) throw new Exception("Tween was killed before it could be started");
             if (IsPaused || IsRunning) return this;
 
-            OnComplete += onComplete;
+            _onInternalComplete = onComplete;
             
             IsRunning = true;
             OnStart?.Invoke();
@@ -186,15 +188,15 @@ namespace ITween
         /// <summary>
         /// Stop playing, remove from ActiveTweens
         /// </summary>
-        public void Stop(bool ignoreFlags = false)
+        public Tween Stop(bool ignoreFlags = false)
         {
             if (!IsAlive) throw new Exception("Tween was killed before it could be stopped");
-            if (!IsRunning) return;
+            if (!IsRunning) return this;
 
             if (!ignoreFlags && _flags.KillWhenStopped)
             {
                 Kill(ignoreFlags: false);
-                return;
+                return this;
             }
             
             IsRunning = false;
@@ -205,6 +207,7 @@ namespace ITween
             {
                 Restart();
             }
+            return this;
         }
 
         /// <summary>
@@ -260,13 +263,13 @@ namespace ITween
         {
             _elapsed = 0f;
             _delayElapsed = 0f;
-            _loopDelayElapsed = _settings.HangTime;
+            _loopDelayElapsed = Settings.HangTime;
             _pausePredicate = null;
 
             _isForwards = _isStartingDirectionForwards;
             _activeEasingFunction = GetEasingFunction();
 
-            _remainingLoops = _settings.LoopCount;
+            _remainingLoops = Settings.LoopCount;
             
             Stop();
 
@@ -276,6 +279,8 @@ namespace ITween
                 if (_flags.StartAutomatically) Start();
             }
         }
+
+        #region Force Completion/Return
 
         /// <summary>
         /// Force the Tween to instantly complete
@@ -288,7 +293,12 @@ namespace ITween
         private void ForceCompletion(bool ignoreCompletion)
         {
             _onUpdate.Invoke(1f);
-            if (!ignoreCompletion) OnComplete?.Invoke();
+            if (!ignoreCompletion)
+            {
+                OnComplete?.Invoke();
+                _onInternalComplete?.Invoke();
+                _onInternalComplete = null;
+            }
             Restart();
         }
         
@@ -304,13 +314,19 @@ namespace ITween
         {
             _onUpdate.Invoke(0f);
         }
-        
-        /// <summary>
-        /// Destroy Tween
-        /// </summary>
-        public static void IT_Kill(Tween tween, bool ignoreFlags = false)
+
+        #endregion
+
+        #region Kill Tween
+
+        public static void IT_Kill(Tween t, bool ignoreFlags = false)
         {
-            tween.Kill(ignoreFlags);
+            t?.Kill(ignoreFlags);
+        }
+
+        void ITween.Kill(bool ignoreFlags)
+        {
+            Kill(ignoreFlags);
         }
 
         private void Kill(bool ignoreFlags)
@@ -318,16 +334,25 @@ namespace ITween
             if (!IsAlive) return;
 
             IsAlive = false;
-            
-            if (!ignoreFlags && _flags.CompleteWhenKilled) OnComplete?.Invoke();
+
+            if (!ignoreFlags && _flags.CompleteWhenKilled)
+            {
+                OnComplete?.Invoke();
+                _onInternalComplete?.Invoke();
+                _onInternalComplete = null;
+            }
             
             IsRunning = false;
             IsPaused = false;
+            
+            OnKilled?.Invoke();
 
             OnStart = null;
             OnStop = null;
             OnLoopComplete = null;
             OnComplete = null;
+            OnKilled = null;
+            _onInternalComplete = null;
             
             _onUnpause = null;
             _pausePredicate = null;
@@ -337,11 +362,15 @@ namespace ITween
             ITManager.StopTween(this);
         }
 
+        #endregion
+
+        #region Reset
+
         /// <summary>
         /// Reset a tween to its original state, can bring them back to life but callback events are lost
         /// </summary>
         public static Tween IT_Reset(Tween tween,
-            [NotNull] UnityEngine.Object target, 
+            [NotNull] Object target, 
             Action onStart = null,
             Action onStop = null,
             Action onLoopComplete = null,
@@ -350,7 +379,7 @@ namespace ITween
             return tween.Reset(target, onStart, onStop, onLoopComplete, onComplete);
         }
 
-        private Tween Reset([NotNull] UnityEngine.Object target, 
+        private Tween Reset([NotNull] Object target, 
             Action onStart = null,
             Action onStop = null,
             Action onLoopComplete = null,
@@ -372,19 +401,41 @@ namespace ITween
 
             _elapsed = 0f;
             _delayElapsed = 0f;
-            _loopDelayElapsed = _settings.HangTime;
+            _loopDelayElapsed = Settings.HangTime;
             _pausePredicate = null;
 
             _isForwards = _isStartingDirectionForwards;
             _activeEasingFunction = GetEasingFunction();
             
-            _remainingLoops = _settings.LoopCount;
+            _remainingLoops = Settings.LoopCount;
             
             if (_flags.StartAutomatically) Start();
             return this;
         }
+
+        #endregion
         
         //===== Helpers =====
+        
+        public IEnumerator AsCoroutine()
+        {
+            if (!IsAlive) yield break;
+            if (Settings.LoopingType != LoopType.Single) throw new NotImplementedException("Haven't accounted for loops yet");
+
+            bool finished = false;
+            OnComplete += onComplete;
+            OnKilled += onKilled;
+
+            yield return new WaitUntil(() => finished);
+
+            OnComplete -= onComplete;
+            OnKilled -= onKilled;
+            
+            yield break;
+
+            void onComplete() => finished = true;
+            void onKilled() => finished = true;
+        }
         
         /// <summary>
         /// Create a new Inverted Tween based on the original
@@ -423,10 +474,10 @@ namespace ITween
                 return deltaTime;
             }
         }
-
+        
         public override string ToString()
         {
-            return _settings.AsString();
+            return Settings.AsString();
         }
 
         private Func<float, float> GetEasingFunction()

@@ -308,7 +308,7 @@ public class PlayerCamera : MonoBehaviour
     /// </summary>
     public PlayerCamera ResetFOV()
     {
-        ITManager.Value(
+        ITManager.IT_Value(
             gameObject,
             _currentFOV,
             _normalFOV,

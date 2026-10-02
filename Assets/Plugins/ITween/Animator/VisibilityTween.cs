@@ -1,7 +1,8 @@
 using System;
+using System.Collections;
 using JetBrains.Annotations;
 
-namespace ITween
+namespace ITween.Animator
 {
     using Internal;
     
@@ -9,11 +10,11 @@ namespace ITween
     /// Wrapper for Tweens, holds a visible and hidden Tween.
     /// Easy showing and hiding animations  
     /// </summary>
-    public class VisibilityTween
+    public sealed class VisibilityTween
     {
         //Core
         private UnityEngine.Object _target;
-        private TweenSettings_Visibility _settings;
+        public TweenSettings_Visibility Settings { get; }
         private Tween _visibleTween, _hiddenTween;
         private Tween _activeTween;
 
@@ -21,6 +22,13 @@ namespace ITween
         public event Action<bool> OnVisibilityChanged;
         private Action _onComplete;
         
+        /// <summary>
+        /// New Visibility Tween
+        /// </summary>
+        /// <param name="target">Object target</param>
+        /// <param name="settings">Tween settings</param>
+        /// <param name="visibleTween">visible tween</param>
+        /// <param name="hiddenTween">hidden tween, leave blank for inverted hide</param>
         public VisibilityTween(
             [NotNull] UnityEngine.Object target,
             TweenSettings_Visibility settings,
@@ -29,7 +37,7 @@ namespace ITween
         )
         {
             _target = target;
-            _settings = settings;
+            Settings = settings;
 
             OnVisibilityChanged = null;
 
@@ -80,5 +88,7 @@ namespace ITween
             _activeTween.Start();
             return this;
         }
+
+        public IEnumerator AsCoroutine() => _activeTween?.AsCoroutine(); 
     }
 }

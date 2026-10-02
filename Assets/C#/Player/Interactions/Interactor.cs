@@ -1,4 +1,3 @@
-using System;
 using NaughtyAttributes;
 using UnityEngine;
 
@@ -17,6 +16,11 @@ public class Interactor : MonoBehaviour
 
     [SerializeField] private LayerMask _interactionLayerMask = Layers.Interaction;
     [SerializeField] private float _interactionDistance = 5f;
+    [SerializeField] private float _closeInteractionDistance = 1.5f;
+    private float _defaultInteractionDistance;
+    
+    [Header("Interaction Blocker")]
+    [SerializeField] private Group _interactionBlocker;
     
     [Space]
     [SerializeField] private bool _drawLook = false;
@@ -26,7 +30,22 @@ public class Interactor : MonoBehaviour
     private void Awake()
     {
         if (_camera == null) _camera = Camera.main;
+        _defaultInteractionDistance = _interactionDistance;
     }
+    
+    #region Subscribe
+
+    private void OnEnable()
+    {
+        _playerInputController.InteractionLock.OnLockChanged += UpdateInteractionBlocker;
+    }
+
+    private void OnDisable()
+    {
+        _playerInputController.InteractionLock.OnLockChanged -= UpdateInteractionBlocker;
+    }
+
+    #endregion
     
     //===== Current Hovering =====
 
@@ -56,15 +75,23 @@ public class Interactor : MonoBehaviour
     //=!= If issues check layer: Requires 'Interaction' =!=
     private void LateUpdate()
     {
+        if (_playerInputController.IsUpdateLocked) return;
+        
         Vector3 worldOrigin = _camera.ScreenToWorldPoint(_playerInputController.MouseDelta);
         if (Physics.Raycast(worldOrigin, transform.forward, out RaycastHit hit, _interactionDistance, _interactionLayerMask))
         {
-            IInteractable iInteractable = hit.transform.GetComponent<IInteractable>();
+            IInteractable iInteractable = hit.collider.transform.GetComponent<IInteractable>();
             RefreshHovering(iInteractable);
             
             if (_playerInputController.InteractPressedThisFrame) iInteractable.OnSelect();
         } 
         else RefreshHovering(null);
+    }
+
+    private void UpdateInteractionBlocker(bool isLocked)
+    {
+        _interactionBlocker.SetActive(isLocked);
+        _interactionDistance = isLocked ? _closeInteractionDistance : _defaultInteractionDistance;
     }
 
     #if UNITY_EDITOR
@@ -73,6 +100,7 @@ public class Interactor : MonoBehaviour
     {
         if (!_drawLook || !Application.isPlaying) return;
         Vector3 worldOrigin = _camera.ScreenToWorldPoint(_playerInputController.MouseDelta);
+        Gizmos.color = Color.black;
         Gizmos.DrawRay(worldOrigin, transform.forward * _interactionDistance);
     }
     
