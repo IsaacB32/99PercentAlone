@@ -226,6 +226,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1563779530817866330, guid: 20f38d8a3ea91860a836b1264e09ee8a, type: 3}
+      propertyPath: m_Icon
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 4243603845254673157, guid: 20f38d8a3ea91860a836b1264e09ee8a, type: 3}
+      propertyPath: m_Icon
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 6726819194219681943, guid: 20f38d8a3ea91860a836b1264e09ee8a, type: 3}
       propertyPath: m_Name
       value: Ship_CameraControlInteraction

@@ -1,5 +1,8 @@
 using System;
 
+/// <summary>
+/// doesn't do anything just a marker Attribute
+/// </summary>
 [AttributeUsage(AttributeTargets.Method)]
 public class HideFromUnityEventAttribute : Attribute
 {
@@ -10,4 +13,6 @@ public class HideFromUnityEventAttribute : Attribute
     
     //[HideFromUnityEvent, SpecialName]
     //public void CalledFromCodeOnly() { ... }
+    
+    //can also mark the method as internal
 }

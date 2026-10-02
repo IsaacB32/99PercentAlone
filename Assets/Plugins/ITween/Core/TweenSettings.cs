@@ -26,7 +26,7 @@ namespace ITween
         [CurveRange(0, 0, 1, 1, EColor.Red), ShowIf(nameof(this.EaseType), enumValue: EasingType.Custom)] private AnimationCurve _customCurve;
         public AnimationCurve CustomCurve => _customCurve;
         
-        public TweenFlags Flags { get; private set; }
+        public ITweenFlags Flags { get; private set; }
         public float DelayTime { get; set; } = 0f;
         public LoopType LoopingType { get; set; } = LoopType.Single;
         public int LoopCount { get; set; } = 1;
@@ -95,7 +95,8 @@ namespace ITween
         public AnimationCurve CustomCurve => _customCurve;
 
         //===== Flags =====
-        [field: SerializeField] public TweenFlags Flags { get; private set; }
+        [SerializeField] private TweenFlags _flags;
+        public ITweenFlags Flags => _flags;
 
         public float DelayTime => 0f;
         public LoopType LoopingType => LoopType.Single;
@@ -113,7 +114,7 @@ namespace ITween
             EaseType = easeType;
             _overshoot = overshoot;
             _customCurve = customCurve;
-            Flags = flags;
+            _flags = flags;
         }
 
         public TweenSettings_Simple(float duration)
@@ -121,7 +122,7 @@ namespace ITween
             Duration = duration;
             EaseType = EasingType.OutBack;
             _overshoot = ITweenSettings.OVERSHOOT_AMOUNT;
-            Flags = new TweenFlags();
+            _flags = new TweenFlags();
         }
 
         public TweenSettings_Simple()
@@ -129,7 +130,7 @@ namespace ITween
             Duration = 0.7f;
             EaseType = EasingType.OutBack;
             _overshoot = ITweenSettings.OVERSHOOT_AMOUNT;
-            Flags = new TweenFlags();
+            _flags = new TweenFlags();
         }
         
         //===== Helpers =====
@@ -183,7 +184,7 @@ namespace ITween
         
         //===== Flags =====
         [SerializeField] protected TweenFlags _flags;
-        public TweenFlags Flags => _flags;
+        public ITweenFlags Flags => _flags;
         
         //===== Constructors =====
 
@@ -247,7 +248,7 @@ namespace ITween
             public EasingType EaseType => EasingType.OutCubic;
             public float Overshoot => 0f;
             public AnimationCurve CustomCurve => null;
-            public TweenFlags Flags => new TweenFlags();
+            public ITweenFlags Flags => new TweenFlags();
             public float DelayTime => 0f;
             public LoopType LoopingType => LoopType.Single;
             public int LoopCount => 0;
@@ -310,7 +311,7 @@ namespace ITween
         {
             get
             {
-                _visibleSettings.ApplyFlags(Flags);
+                _visibleSettings.ApplyFlags(_flags);
                 return _visibleSettings;
             }
         }
@@ -320,12 +321,18 @@ namespace ITween
         {
             get
             { 
-                _hiddenSettings.ApplyFlags(Flags);
+                _hiddenSettings.ApplyFlags(_flags);
                 return _hiddenSettings;
             }
         }
-
-        [field: SerializeField] public TweenFlags_Visibility Flags { get; private set; }
+        
+        public float DelayTime { get; set; } = 0f;
+        public LoopType LoopingType { get; set; } = LoopType.Single;
+        public int LoopCount { get; set; } = 1;
+        public float HangTime { get; set; } = 0f;
+        
+        [SerializeField] protected TweenFlags_Visibility _flags;
+        public ITweenFlags Flags => _flags;
     }
     
     #endregion
@@ -341,7 +348,7 @@ namespace ITween.Internal
         EasingType EaseType { get; }
         float Overshoot { get; }
         AnimationCurve CustomCurve { get; }
-        TweenFlags Flags { get; }
+        ITweenFlags Flags { get; }
         float DelayTime { get; }
         LoopType LoopingType { get; }
         int LoopCount { get; }

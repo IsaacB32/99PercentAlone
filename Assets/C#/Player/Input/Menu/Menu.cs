@@ -1,5 +1,3 @@
-using System.Linq;
-using System.Runtime.CompilerServices;
 using NaughtyAttributes;
 using UnityEngine;
 
@@ -34,22 +32,22 @@ public class Menu : MonoBehaviour
     
     //===== Internal Controls =====
     
-    [HideFromUnityEvent, SpecialName]
-    public void OpenMenu()
+    [HideFromUnityEvent]
+    internal void OpenMenu()
     {
         State = MenuState.Open;
         OnPresent();
     }
 
-    [HideFromUnityEvent, SpecialName]
-    public void ParentMenu()
+    [HideFromUnityEvent]
+    internal void ParentMenu()
     {
         State = MenuState.Parented;
         OnDismiss();
     }
 
-    [HideFromUnityEvent, SpecialName]
-    public void CloseMenu()
+    [HideFromUnityEvent]
+    internal void CloseMenu()
     {
         State = MenuState.Closed;
         OnDismiss();
@@ -83,4 +81,10 @@ public class Menu : MonoBehaviour
         Open,       //visible on the active UI
         Parented    //not visible but considered open
     }
-}
+    
+    public void AssignCursor(MenuVirtualCursor cursor)
+    {
+        Cursor = cursor;
+    }
+    
+}  

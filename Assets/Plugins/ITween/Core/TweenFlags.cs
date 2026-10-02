@@ -2,6 +2,11 @@ using UnityEngine;
 
 namespace ITween.Internal
 {
+    public interface ITweenFlags
+    {
+        
+    }
+    
     public enum LoopType
     {
         Single,    //play once
@@ -13,7 +18,7 @@ namespace ITween.Internal
     /// Boolean flags for special cases for Tweens
     /// </summary>
     [System.Serializable]
-    public class TweenFlags
+    public class TweenFlags : ITweenFlags
     {
         [SerializeField] [Tooltip("Animates with UnscaledTimeScale")]
         private bool _ignoreTimeScale = false;
@@ -70,7 +75,7 @@ namespace ITween.Internal
     }
     
     [System.Serializable]
-    public class TweenFlags_Visibility
+    public class TweenFlags_Visibility : ITweenFlags
     {
         [SerializeField] [Tooltip("Animates with UnscaledTimeScale")] private bool _ignoreTimeScale = false;
         [SerializeField] [Tooltip("Easing Curve Inverted on return")] private bool _ignoreInvertEasing = false;

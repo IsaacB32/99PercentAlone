@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using ITween;
 
@@ -7,15 +8,18 @@ using ITween;
 public class Lock
 {
     private HashSet<object> _lockHolders = new HashSet<object>();
+    public event Action<bool> OnLockChanged;
 
     public void RegisterLockHolder(object owner)
     {
+        if (_lockHolders.Count == 0) OnLockChanged?.Invoke(true);
         _lockHolders.Add(owner);
     }
 
     public void UnregisterLockHolder(object owner)
     {
         _lockHolders.Remove(owner);
+        if (_lockHolders.Count == 0) OnLockChanged?.Invoke(false);
     }
 
     public void LockUntilNextFrame(object owner)

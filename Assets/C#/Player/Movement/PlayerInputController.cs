@@ -12,6 +12,8 @@ public class PlayerInputController : InputController
         Gravity,
         Weightless,
     }
+    
+    [NonSerialized] public readonly Lock InteractionLock = new Lock();
 
     [Space]
     [SerializeField] private MovementType _enteringState;

@@ -1,3 +1,4 @@
+using System;
 using NaughtyAttributes;
 using UnityEngine;
 
@@ -9,6 +10,9 @@ public class MenuInteractable : MonoBehaviour
     [SerializeField] private bool _animate = true;
     private CameraAnimator _cameraAnimator;
 
+    public event Action OnSelectBegin;
+    public event Action OnSelectEnd;
+
     private void Awake()
     {
         _cameraAnimator = GetComponent<CameraAnimator>();
@@ -16,9 +20,11 @@ public class MenuInteractable : MonoBehaviour
     
     public void OnSelect()
     {
+        OnSelectBegin?.Invoke();
         _cameraAnimator.AnimateToTarget(_animate, () =>
         {
             MenuInputController.OpenMenuAsRoot(_menu, ReturnToOrigin);
+            OnSelectEnd?.Invoke();
         });
     }
 

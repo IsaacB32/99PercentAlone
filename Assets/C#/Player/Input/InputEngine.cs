@@ -105,10 +105,18 @@ public sealed class InputEngine : MonoBehaviour
     /// </summary>
     public static void RemoveInput() { SwitchActionMap(InputMapType.None); }
     
-    //===== Input Lock =====
-
-    private Lock _inputLock = new Lock();
+    //===== Input Locks =====
+    
+    /// <summary>
+    /// Used for stopping all Input from being read
+    /// </summary>
     public static Lock InputLock => _instance._inputLock;
+    private Lock _inputLock = new Lock();
+
+    /// <summary>
+    /// Used for stopping Interaction from happening 
+    /// </summary>
+    public static Lock InteractionLock => GetPlayerController().InteractionLock;
 
     //===== Control Reference =====
     
